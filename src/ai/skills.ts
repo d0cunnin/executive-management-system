@@ -325,6 +325,30 @@ export const SKILLS: Record<string, SkillDef> = {
   },
   ministry_plan: { key: 'ministry_plan', name: 'Ministry plan', consequential: false, instruction: () => 'Draft a ministry plan.', template: () => ['Ministry plan', '• Purpose', '• Team and roles', '• Calendar', '• Communications', '• Volunteers needed'].join('\n') },
   draft_announcement: { key: 'draft_announcement', name: 'Draft an announcement', consequential: true, instruction: (c) => 'Draft a church announcement.\n' + describe(c), template: () => 'Announcement: [what] · [when] · [where] · [who to contact]' },
+  study_plan: {
+    key: 'study_plan', name: 'Two-week study plan', consequential: false,
+    instruction: (c) => 'Build a realistic two-week nursing school study plan around these classes, clinicals, exams and assignments. Protect rest before clinicals and exams.\n' + describe(c),
+    template: (c) => {
+      const nursing = (e: { areaId?: string; kind: string }) => e.areaId === 'area_nursing' || ['class', 'exam', 'clinical'].includes(e.kind)
+      const events = comingUp(c.db, 14).filter(nursing)
+      const exams = events.filter((e) => e.kind === 'exam')
+      const todo = c.db.tasks.filter((t) => t.areaId === 'area_nursing' && t.status !== 'done')
+      if (!events.length && !todo.length) return 'Nothing for nursing school is on your calendar or to-do list yet. Add your classes, clinicals, exams and assignments, and I will build the plan around them.'
+      return [
+        'COMING UP (next 2 weeks)',
+        ...(events.length ? events.map((e) => `• ${friendlyDate(e.start)} — ${e.title} (${e.kind})`) : ['• Nothing scheduled.']),
+        '',
+        'ASSIGNMENTS & TO-DOS',
+        ...(todo.length ? todo.map((t) => `• ${t.title}${t.dueDate ? ` — due ${friendlyDate(t.dueDate)}` : ''}`) : ['• None listed.']),
+        '',
+        'PLAN',
+        ...exams.map((e) => `• ${e.title}: start reviewing 5–7 days before. Short daily sessions beat one long night.`),
+        '• Block 45–60 minutes of study on non-clinical days; review notes the same day as class.',
+        '• Practice questions (NCLEX-style) 3× a week, 15–25 questions per session.',
+        '• Keep the night before a clinical or exam light, and protect your sleep.',
+      ].join('\n')
+    },
+  },
   wellness_check: {
     key: 'wellness_check', name: 'Wellness check-in', consequential: false, instruction: () => 'Encourage balance gently. No diagnosis, no body image.',
     template: (c) => {

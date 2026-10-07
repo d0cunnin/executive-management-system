@@ -3,7 +3,7 @@
 // so swapping localStorage for Supabase never touches UI code.
 import type { BaseRecord, CollectionName, Collections, DB, ProgressEntry } from '../domain/types'
 import { nowIso, uid } from '../lib/util'
-import { buildSeed } from './seed'
+import { AGENTS, AREAS, buildSeed } from './seed'
 
 export interface Persistence {
   readonly kind: 'local' | 'supabase'
@@ -41,6 +41,7 @@ export class Store {
       if (loaded) {
         // Fill any collections added since the data was saved.
         this.db = { ...EMPTY, ...loaded }
+        await this.addMissingBuiltins()
       } else {
         this.db = buildSeed()
         await this.persistence.saveAll(this.db)
@@ -51,6 +52,24 @@ export class Store {
     }
     this.ready = true
     this.emit()
+  }
+
+  /**
+   * Areas and assistants added to EMS after an account was created (for
+   * example Nursing School) are added on load, without touching her data.
+   */
+  private async addMissingBuiltins() {
+    const now = nowIso()
+    const areas = AREAS.filter((a) => !this.db.areas.some((x) => x.id === a.id))
+    if (areas.length) {
+      this.db = { ...this.db, areas: [...this.db.areas, ...areas] }
+      await this.persistence.saveCollection('areas', this.db.areas, areas.map((a) => a.id), [])
+    }
+    const agents = AGENTS.filter((a) => !this.db.agents.some((x) => x.key === a.key)).map((a) => ({ ...a, id: `agent_${a.key}`, createdAt: now, updatedAt: now }))
+    if (agents.length) {
+      this.db = { ...this.db, agents: [...this.db.agents, ...agents] }
+      await this.persistence.saveCollection('agents', this.db.agents, agents.map((a) => a.id), [])
+    }
   }
 
   subscribe = (fn: Listener) => {

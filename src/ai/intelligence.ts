@@ -354,6 +354,7 @@ export interface Classification {
 }
 
 const AREA_HINTS: [RegExp, string][] = [
+  [/nursing|\bnclex\b|clinicals?\b|care plan|preceptor|pharmacology|patho(physiology)?\b|med[- ]surg|skills check-?off|\bati\b|\bhesi\b|nursing school/i, 'area_nursing'],
   [/faith\s*\+?\s*(&|and)?\s*mental health summit|\bsummit\b|speaker|sponsor|vendor|attendee|registration/i, 'area_summit'],
   [/build your ark|\bark\b|substack|prepar(ed|ation|edness)/i, 'area_ark'],
   [/becoming her|discipleship|mentorship|mentee/i, 'area_becoming'],
@@ -383,7 +384,7 @@ export function classifyCapture(text: string): Classification {
   else if (/^(project:|turn this into a project)|launch (a|the)|build (a|the)|create (a|an|the) .*(course|workbook|website|program|campaign|book)/i.test(lower)) type = /^need to|^i need to/i.test(lower) ? 'idea' : 'project'
   else if (/post about|video (about|on)|reel|youtube|podcast episode|substack (post|article)|content idea/i.test(lower)) type = 'content'
   else if (/@|\b\d{3}[-.\s]\d{3}[-.\s]\d{4}\b|contact:|met (someone|a)/i.test(lower)) type = 'contact'
-  else if (/^(need to|i need to|todo|call|email|send|buy|pay|schedule|book|renew|finish|review|sign|follow up)/i.test(lower)) type = 'task'
+  else if (/^(need to|i need to|todo|call|email|send|buy|pay|schedule|book|renew|finish|review|sign|follow up|study|submit|practice|turn in|read chapter|complete)/i.test(lower)) type = 'task'
   else if (/^(note:|notes from|takeaway)/i.test(lower)) type = 'note'
   else confidence = 'low'
 

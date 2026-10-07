@@ -81,3 +81,12 @@ describe('what next & opportunities', () => {
     expect(groups.find((g) => g.label === 'Projects')?.items.length).toBeGreaterThan(0)
   })
 })
+
+describe('nursing school', () => {
+  it('files nursing work in Nursing School, not DBM', () => {
+    expect(classifyCapture('Study for pharmacology exam').areaId).toBe('area_nursing')
+    expect(classifyCapture('Clinical shift Thursday at 6am').areaId).toBe('area_nursing')
+    expect(classifyCapture('NCLEX practice questions').areaId).toBe('area_nursing')
+    expect(classifyCapture('Study for pharmacology exam Friday').type).toBe('task')
+  })
+})

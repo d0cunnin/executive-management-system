@@ -21,6 +21,7 @@ export const AREA_IDS = {
   ideas: 'area_ideas',
   team: 'area_team',
   wellness: 'area_wellness',
+  nursing: 'area_nursing',
 } as const
 
 const A = AREA_IDS
@@ -61,6 +62,9 @@ export const AREAS: Area[] = [
     [A.business]),
   area(A.ideas, 'ideas', 'Ideas + Opportunities', 'system', '#5eead4', 'Things you might build, teach, or sell', ['Ideas', 'Opportunities'], [A.business]),
   area(A.team, 'ai-team', 'My AI Team', 'system', '#93c5fd', 'Your assistants and what they are doing', ['Assistants', 'Approvals', 'Activity'], []),
+  area(A.nursing, 'nursing-school', 'Nursing School', 'school', '#67e8f9', 'Classes, clinicals, exams, NCLEX',
+    ['Classes', 'Assignments', 'Exams', 'Clinicals', 'Skills check-offs', 'Care plans', 'Study schedule', 'NCLEX prep', 'Financial aid'],
+    [A.personal, A.wellness]),
   area(A.wellness, 'wellness', 'Wellness', 'personal', '#86efac', 'Movement, rest, consistency', ['Movement', 'Stretching', 'Sleep', 'Hydration', 'Check-ins', 'Recovery'], [A.personal]),
 ]
 
@@ -79,6 +83,7 @@ export const AGENTS: Omit<Agent, 'id' | 'createdAt' | 'updatedAt'>[] = [
   { key: 'event', name: 'Event Assistant', purpose: 'Plans and runs events.', areaIds: [A.summit], skills: ['event_runsheet'] },
   { key: 'nonprofit', name: 'Nonprofit Assistant', purpose: 'Supports Steps to Victory programs and funding.', areaIds: [A.stv], skills: ['grant_prep'] },
   { key: 'ministry', name: 'Ministry Assistant', purpose: 'Supports SOCCKZOO planning and communications.', areaIds: [A.church], skills: ['ministry_plan', 'draft_announcement'] },
+  { key: 'study', name: 'Study Assistant', purpose: 'Keeps nursing school organized: classes, clinicals, exams, and a study plan that fits your week.', areaIds: [A.nursing], skills: ['study_plan'] },
   { key: 'wellness', name: 'Wellness Assistant', purpose: 'Encourages movement, rest, and consistency.', areaIds: [A.wellness], skills: ['wellness_check'] },
 ]
 

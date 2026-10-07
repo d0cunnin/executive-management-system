@@ -15,7 +15,7 @@ export interface BaseRecord {
 
 // ── Areas ───────────────────────────────────────────────────────────────────
 
-export type AreaKind = 'personal' | 'organization' | 'standalone' | 'function' | 'system'
+export type AreaKind = 'personal' | 'organization' | 'standalone' | 'function' | 'system' | 'school'
 
 /** A major part of D'Andrea's world. Areas never "complete". */
 export interface Area extends BaseRecord {
@@ -179,6 +179,9 @@ export type EventKind =
   | 'personal'
   | 'wellness'
   | 'launch'
+  | 'class'
+  | 'exam'
+  | 'clinical'
 
 export interface CalendarEvent extends BaseRecord {
   title: string

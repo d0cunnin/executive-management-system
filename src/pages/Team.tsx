@@ -8,7 +8,7 @@ import { MODE_LABEL } from '../domain/labels'
 import { cn } from '../lib/util'
 
 /** Skills that can run on their own without a project selected. */
-const STANDALONE = new Set(['daily_brief', 'weekly_review', 'monthly_review', 'quarterly_review', 'what_next', 'needs_attention_scan', 'organize_captures', 'prep_appointments', 'waiting_on_review', 'monetize_assets', 'launch_checklist', 'event_runsheet', 'grant_prep', 'ministry_plan', 'wellness_check', 'repurpose'])
+const STANDALONE = new Set(['daily_brief', 'weekly_review', 'monthly_review', 'quarterly_review', 'what_next', 'needs_attention_scan', 'organize_captures', 'prep_appointments', 'waiting_on_review', 'monetize_assets', 'launch_checklist', 'event_runsheet', 'grant_prep', 'ministry_plan', 'wellness_check', 'repurpose', 'study_plan'])
 
 export default function Team() {
   const db = useDB()

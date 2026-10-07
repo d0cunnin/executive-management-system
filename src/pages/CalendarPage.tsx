@@ -16,6 +16,9 @@ const KIND_COLOR: Record<EventKind, string> = {
   personal: '#f0abfc',
   wellness: '#86efac',
   launch: '#facc15',
+  class: '#67e8f9',
+  exam: '#f87171',
+  clinical: '#2dd4bf',
 }
 
 export default function CalendarPage() {

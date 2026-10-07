@@ -48,7 +48,7 @@ export default function AreaPage() {
   return (
     <div className="space-y-5">
       <PageHeader
-        eyebrow={area.kind === 'standalone' ? 'Standalone' : area.kind === 'organization' ? 'Organization' : area.kind === 'personal' ? 'Personal' : 'Area'}
+        eyebrow={area.kind === 'standalone' ? 'Standalone' : area.kind === 'organization' ? 'Organization' : area.kind === 'personal' ? 'Personal' : area.kind === 'school' ? 'School' : 'Area'}
         title={area.name}
         sub={area.tagline}
         actions={
