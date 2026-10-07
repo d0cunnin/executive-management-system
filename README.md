@@ -26,7 +26,7 @@ With no configuration, EMS runs in **demo mode**:
 
 ## Connect real sign-in, storage and AI
 
-1. Create a Supabase project. Copy `.env.example` to `.env` and fill in `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
+1. Create a Supabase project. Put its URL and **anon** key in `.env.production` (already set for D’Andrea’s project) and, for local development, in `.env`. Never commit the service_role key.
 2. Apply the schema in `supabase/migrations/` with `supabase db push`, or paste it into the SQL editor. Every table has row-level security, so each row is private to its owner.
 3. Restart the app. Sign-in now uses Supabase email and password, and data saves to Postgres. A first-time sign-in starts with the sample data.
 4. For AI, deploy the edge function and turn it on:
