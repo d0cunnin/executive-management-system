@@ -1,0 +1,91 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Cormorant Garamond", ui-serif, Georgia, serif;
+
+  --color-ink-950: #07061a;
+  --color-ink-900: #0d0b26;
+  --color-ink-850: #120f33;
+  --color-ink-800: #18143f;
+  --color-ink-700: #241e57;
+  --color-line: rgb(165 160 255 / 0.12);
+  --color-line-strong: rgb(165 160 255 / 0.24);
+  --color-mist: #c9c6ef;
+  --color-muted: #8f8bc0;
+  --color-glow: #8b7cff;
+  --color-gold: #e8c77a;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
+  body {
+    @apply bg-ink-950 text-mist font-sans antialiased;
+    background-image:
+      radial-gradient(1200px 600px at 85% -10%, rgb(110 80 255 / 0.18), transparent 60%),
+      radial-gradient(900px 500px at -10% 110%, rgb(56 110 255 / 0.12), transparent 60%);
+    background-attachment: fixed;
+  }
+  ::selection {
+    background: rgb(139 124 255 / 0.4);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-glow);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+}
+
+@utility glass {
+  @apply rounded-2xl border border-line bg-ink-900/60 backdrop-blur-xl;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04), 0 20px 40px -24px rgb(0 0 0 / 0.6);
+}
+@utility label {
+  @apply text-[11px] font-semibold tracking-[0.18em] uppercase text-muted;
+}
+@utility display {
+  @apply font-display font-semibold text-white tracking-tight;
+}
+@utility btn {
+  @apply inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+}
+@utility btn-primary {
+  @apply btn bg-glow text-white hover:bg-[#9d90ff] shadow-[0_8px_24px_-8px_rgb(139_124_255/0.7)];
+}
+@utility btn-ghost {
+  @apply btn border border-line text-mist hover:bg-white/5 hover:border-line-strong;
+}
+@utility btn-gold {
+  @apply btn bg-gold/15 text-gold border border-gold/30 hover:bg-gold/25;
+}
+@utility input {
+  @apply w-full rounded-xl border border-line bg-ink-950/60 px-3.5 py-2.5 text-sm text-white placeholder:text-muted/70 outline-none focus:border-glow/60;
+}
+@utility chip {
+  @apply inline-flex items-center gap-1 rounded-full border border-line px-2 py-0.5 text-[11px] text-muted;
+}
+@utility row {
+  @apply flex items-start gap-3 rounded-xl px-3 py-2.5 hover:bg-white/[0.03] transition-colors;
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+.rise { animation: rise 0.4s ease-out both; }
+
+@keyframes pulse-ring {
+  0% { transform: scale(1); opacity: 0.5; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise { animation: none; }
+}
