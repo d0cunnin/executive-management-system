@@ -111,7 +111,9 @@ export function Layout() {
   const [drawer, setDrawer] = useState(false)
   const location = useLocation()
 
-  useEffect(() => setDrawer(false), [location.pathname])
+  useEffect(() => {
+    setDrawer(false)
+  }, [location.pathname])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

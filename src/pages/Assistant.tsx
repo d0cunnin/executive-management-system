@@ -37,7 +37,11 @@ export default function Assistant() {
     }
   }, [params])
 
-  useEffect(() => endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }), [turns, busy])
+  // Braces matter: newer browsers return a Promise from scrollIntoView, and
+  // React would try to call anything an effect returns as its cleanup.
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+  }, [turns, busy])
 
   return (
     <div className="mx-auto flex min-h-[calc(100vh-180px)] max-w-3xl flex-col">
