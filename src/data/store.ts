@@ -27,6 +27,8 @@ export class Store {
   private listeners = new Set<Listener>()
   ready = false
   error: string | null = null
+  /** Set when saved data could not be loaded. The app must not pretend to work. */
+  loadError: string | null = null
 
   readonly persistence: Persistence
   constructor(persistence: Persistence) {
@@ -44,8 +46,8 @@ export class Store {
         await this.persistence.saveAll(this.db)
       }
     } catch (e) {
-      this.error = e instanceof Error ? e.message : String(e)
-      this.db = buildSeed()
+      // Never fall back to sample data here: changes would look saved but not be.
+      this.loadError = e instanceof Error ? e.message : String(e)
     }
     this.ready = true
     this.emit()

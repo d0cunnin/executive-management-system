@@ -17,11 +17,13 @@ const Ctx = createContext<EMS | null>(null)
 export function EMSProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth()
   const userId = user?.id ?? 'anon'
+  const [attempt, setAttempt] = useState(0)
   const ems = useMemo<EMS>(() => {
     const persistence = supabase && userId !== 'demo-user' && userId !== 'anon' ? new SupabasePersistence(supabase, userId) : new LocalPersistence()
     const ai = aiEnabled && supabase ? new EdgeFunctionProvider(supabase) : new BuiltinProvider()
     return { store: new Store(persistence), ai }
-  }, [userId])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, attempt])
   const [readyFor, setReadyFor] = useState<Store | null>(null)
 
   useEffect(() => {
@@ -32,6 +34,23 @@ export function EMSProvider({ children }: { children: ReactNode }) {
     }
   }, [ems])
 
+  if (readyFor === ems.store && ems.store.loadError) {
+    return (
+      <div className="grid min-h-screen place-items-center px-4">
+        <div className="glass max-w-md p-6">
+          <p className="label">Couldn’t open your EMS</p>
+          <p className="mt-2 text-sm text-white">Your information couldn’t be loaded, so nothing would be saved. Nothing has been changed.</p>
+          <p className="mt-3 rounded-lg bg-ink-950/60 p-2 font-mono text-xs text-amber-200">{ems.store.loadError}</p>
+          {/permission denied/i.test(ems.store.loadError) && (
+            <p className="mt-3 text-xs text-muted">The database hasn’t given the app access to its tables yet. Run the “grant access” SQL from supabase/migrations in the Supabase SQL Editor, then try again.</p>
+          )}
+          <button className="btn-primary mt-4" onClick={() => setAttempt((n) => n + 1)}>
+            Try again
+          </button>
+        </div>
+      </div>
+    )
+  }
   if (readyFor !== ems.store) {
     return (
       <div className="grid min-h-screen place-items-center">
