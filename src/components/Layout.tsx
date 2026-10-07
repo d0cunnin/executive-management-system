@@ -9,6 +9,7 @@ import { useUI } from '../app/UIContext'
 import { useAuth } from '../auth/AuthContext'
 import { cn } from '../lib/util'
 import { CommandPalette } from './CommandPalette'
+import { ErrorBoundary } from './ErrorBoundary'
 import { NewProjectModal } from './NewProjectModal'
 import { notices } from './notifications'
 import { QuickCapture } from './QuickCapture'
@@ -177,7 +178,10 @@ export function Layout() {
         {store.error && <div className="mx-4 mt-3 rounded-xl border border-rose-400/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-200 sm:mx-6">{store.error}</div>}
 
         <main className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6 lg:px-8">
-          <Outlet />
+          {/* Keyed by page so moving to another page clears an error. */}
+          <ErrorBoundary key={location.pathname}>
+            <Outlet />
+          </ErrorBoundary>
         </main>
       </div>
 

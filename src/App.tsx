@@ -1,25 +1,26 @@
-import { lazy, Suspense, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { EMSProvider } from './app/EMSContext'
 import { UIProvider } from './app/UIContext'
 import { AuthProvider, useAuth } from './auth/AuthContext'
 import { Layout } from './components/Layout'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import Login from './pages/Login'
 import Today from './pages/Today'
 
-const CommandCenter = lazy(() => import('./pages/CommandCenter'))
-const AreaPage = lazy(() => import('./pages/AreaPage'))
-const Work = lazy(() => import('./pages/Work'))
-const ProjectPage = lazy(() => import('./pages/ProjectPage'))
-const Tasks = lazy(() => import('./pages/Tasks'))
-const CalendarPage = lazy(() => import('./pages/CalendarPage'))
-const Ideas = lazy(() => import('./pages/Ideas'))
-const Income = lazy(() => import('./pages/Income'))
-const Wellness = lazy(() => import('./pages/Wellness'))
-const Team = lazy(() => import('./pages/Team'))
-const Assistant = lazy(() => import('./pages/Assistant'))
-const Information = lazy(() => import('./pages/Information'))
-const Reviews = lazy(() => import('./pages/Reviews'))
+import CommandCenter from './pages/CommandCenter'
+import AreaPage from './pages/AreaPage'
+import Work from './pages/Work'
+import ProjectPage from './pages/ProjectPage'
+import Tasks from './pages/Tasks'
+import CalendarPage from './pages/CalendarPage'
+import Ideas from './pages/Ideas'
+import Income from './pages/Income'
+import Wellness from './pages/Wellness'
+import Team from './pages/Team'
+import Assistant from './pages/Assistant'
+import Information from './pages/Information'
+import Reviews from './pages/Reviews'
 
 function Splash() {
   return (
@@ -49,6 +50,7 @@ function LoginRoute() {
 
 export default function App() {
   return (
+    <ErrorBoundary>
     <AuthProvider>
       <BrowserRouter>
         <Routes>
@@ -61,23 +63,24 @@ export default function App() {
             }
           >
             <Route index element={<Today />} />
-            <Route path="map" element={<Suspense fallback={<Splash />}><CommandCenter /></Suspense>} />
-            <Route path="areas/:slug" element={<Suspense fallback={<Splash />}><AreaPage /></Suspense>} />
-            <Route path="work" element={<Suspense fallback={<Splash />}><Work /></Suspense>} />
-            <Route path="projects/:id" element={<Suspense fallback={<Splash />}><ProjectPage /></Suspense>} />
-            <Route path="tasks" element={<Suspense fallback={<Splash />}><Tasks /></Suspense>} />
-            <Route path="calendar" element={<Suspense fallback={<Splash />}><CalendarPage /></Suspense>} />
-            <Route path="ideas" element={<Suspense fallback={<Splash />}><Ideas /></Suspense>} />
-            <Route path="income" element={<Suspense fallback={<Splash />}><Income /></Suspense>} />
-            <Route path="wellness" element={<Suspense fallback={<Splash />}><Wellness /></Suspense>} />
-            <Route path="team" element={<Suspense fallback={<Splash />}><Team /></Suspense>} />
-            <Route path="assistant" element={<Suspense fallback={<Splash />}><Assistant /></Suspense>} />
-            <Route path="information" element={<Suspense fallback={<Splash />}><Information /></Suspense>} />
-            <Route path="reviews" element={<Suspense fallback={<Splash />}><Reviews /></Suspense>} />
+            <Route path="map" element={<CommandCenter />} />
+            <Route path="areas/:slug" element={<AreaPage />} />
+            <Route path="work" element={<Work />} />
+            <Route path="projects/:id" element={<ProjectPage />} />
+            <Route path="tasks" element={<Tasks />} />
+            <Route path="calendar" element={<CalendarPage />} />
+            <Route path="ideas" element={<Ideas />} />
+            <Route path="income" element={<Income />} />
+            <Route path="wellness" element={<Wellness />} />
+            <Route path="team" element={<Team />} />
+            <Route path="assistant" element={<Assistant />} />
+            <Route path="information" element={<Information />} />
+            <Route path="reviews" element={<Reviews />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>
       </BrowserRouter>
     </AuthProvider>
+    </ErrorBoundary>
   )
 }
