@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useDB, useEMS } from '../app/EMSContext'
+import { SampleDataBanner } from '../components/SampleDataBanner'
 import { AreaTag, Field, Modal, PageHeader, Panel } from '../components/ui'
 import type { EventKind } from '../domain/types'
 import { cn, parseDate, startOfDay, timeOf, toDateKey } from '../lib/util'
@@ -89,6 +90,9 @@ export default function CalendarPage() {
           </>
         }
       />
+      <div className="mb-5">
+        <SampleDataBanner />
+      </div>
       <div className="grid gap-5 xl:grid-cols-[1fr_340px]">
         <div className="glass overflow-hidden p-0">
           <div className="grid grid-cols-7 border-b border-line text-center text-[11px] text-muted">

@@ -7,6 +7,7 @@ import {
 } from '../ai/intelligence'
 import { runSkill } from '../ai/skills'
 import { useDB, useEMS } from '../app/EMSContext'
+import { SampleDataBanner } from '../components/SampleDataBanner'
 import { AreaTag, Calm, ModeBadge, Panel } from '../components/ui'
 import type { Task } from '../domain/types'
 import { cn, friendlyDate, money, timeOf } from '../lib/util'
@@ -67,6 +68,7 @@ export default function Today() {
 
   return (
     <div className="space-y-6">
+      <SampleDataBanner />
       <header className="rise">
         <p className="label">{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</p>
         <h1 className="display mt-1 text-4xl sm:text-5xl">{greeting()}, D’Andrea.</h1>

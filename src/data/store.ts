@@ -108,6 +108,52 @@ export class Store {
     this.create('progress', { ...entry, at: nowIso() })
   }
 
+  /** How many sample (demo) records are still in the system. */
+  sampleCount(): number {
+    return (Object.keys(this.db) as CollectionName[]).reduce((n, k) => n + (this.db[k] as BaseRecord[]).filter((r) => r.demo).length, 0)
+  }
+
+  /**
+   * Remove every sample record, plus anything attached to a sample record
+   * (for example a to-do added to a sample project). Areas, the AI team and
+   * everything D'Andrea created on her own are kept.
+   */
+  async clearSampleData(): Promise<number> {
+    const names = Object.keys(this.db) as CollectionName[]
+    const removed = new Set<string>()
+    for (const k of names) for (const r of this.db[k] as BaseRecord[]) if (r.demo) removed.add(r.id)
+    const refs = ['projectId', 'taskId', 'campaignId', 'goalId', 'offerId', 'fromId', 'toId'] as const
+    const attached = (r: BaseRecord) => refs.some((f) => removed.has((r as unknown as Record<string, string>)[f]))
+    // Repeat until stable so chains (sample project -> my to-do -> AI draft) go together.
+    for (let changed = true; changed; ) {
+      changed = false
+      for (const k of names)
+        for (const r of this.db[k] as BaseRecord[])
+          if (!removed.has(r.id) && attached(r)) {
+            removed.add(r.id)
+            changed = true
+          }
+    }
+    const next = { ...this.db }
+    const failures: string[] = []
+    for (const k of names) {
+      const list = this.db[k] as BaseRecord[]
+      const gone = list.filter((r) => removed.has(r.id)).map((r) => r.id)
+      if (!gone.length) continue
+      const kept = list.filter((r) => !removed.has(r.id))
+      ;(next as Record<string, BaseRecord[]>)[k] = kept
+      try {
+        await this.persistence.saveCollection(k, kept, [], gone)
+      } catch (e) {
+        failures.push(e instanceof Error ? e.message : String(e))
+      }
+    }
+    this.db = next
+    this.error = failures.length ? `Some sample data could not be removed: ${failures[0]}` : null
+    this.emit()
+    return removed.size
+  }
+
   async reset() {
     this.db = buildSeed()
     await this.persistence.saveAll(this.db)
