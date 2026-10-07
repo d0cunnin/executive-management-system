@@ -31,9 +31,9 @@ function Splash() {
 
 /** Everything inside EMS requires a signed-in user. */
 function Protected({ children }: { children: ReactNode }) {
-  const { user, loading } = useAuth()
+  const { user, loading, recovering } = useAuth()
   if (loading) return <Splash />
-  if (!user) return <Navigate to="/login" replace />
+  if (!user || recovering) return <Navigate to={`/login${window.location.hash}`} replace />
   return (
     <EMSProvider>
       <UIProvider>{children}</UIProvider>
@@ -42,9 +42,9 @@ function Protected({ children }: { children: ReactNode }) {
 }
 
 function LoginRoute() {
-  const { user, loading } = useAuth()
+  const { user, loading, recovering } = useAuth()
   if (loading) return <Splash />
-  return user ? <Navigate to="/" replace /> : <Login />
+  return user && !recovering ? <Navigate to="/" replace /> : <Login />
 }
 
 export default function App() {
