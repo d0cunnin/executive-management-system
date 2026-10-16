@@ -114,8 +114,41 @@ function Notifications() {
   )
 }
 
+/** Save problems, worded plainly. Connection drops retry on their own. */
+function SaveStatus() {
+  useDB() // re-render when the store changes
+  const { store } = useEMS()
+  if (store.offline && store.unsavedCount) {
+    return (
+      <div role="status" className="mx-4 mt-3 flex flex-wrap items-center gap-3 rounded-xl border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-xs text-amber-100 sm:mx-6">
+        <span className="flex-1">
+          Can’t reach the server right now, so {store.unsavedCount === 1 ? '1 change hasn’t' : `${store.unsavedCount} changes haven’t`} saved yet. Keep this tab open — it will save automatically when the connection is back.
+        </span>
+        <button className="btn-ghost py-1 text-xs" onClick={store.retryNow}>
+          Try now
+        </button>
+      </div>
+    )
+  }
+  if (!store.error) return null
+  return (
+    <div role="alert" className="mx-4 mt-3 flex flex-wrap items-center gap-3 rounded-xl border border-rose-400/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-200 sm:mx-6">
+      <span className="flex-1">{store.error}</span>
+      <button
+        className="btn-ghost py-1 text-xs"
+        onClick={() => {
+          store.error = null
+          store.retryNow()
+        }}
+      >
+        Dismiss
+      </button>
+    </div>
+  )
+}
+
 export function Layout() {
-  const { ai, store } = useEMS()
+  const { ai } = useEMS()
   const { mode, signOut, user } = useAuth()
   const ui = useUI()
   const [drawer, setDrawer] = useState(false)
@@ -193,7 +226,7 @@ export function Layout() {
           </div>
         </header>
 
-        {store.error && <div className="mx-4 mt-3 rounded-xl border border-rose-400/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-200 sm:mx-6">{store.error}</div>}
+        <SaveStatus />
 
         <main className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6 lg:px-8">
           {/* Keyed by page so moving to another page clears an error. */}

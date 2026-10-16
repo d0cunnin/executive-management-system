@@ -109,10 +109,121 @@ export class Store {
   private commit<K extends CollectionName>(name: K, records: Collections[K][], changed: string[], removed: string[] = []) {
     this.db = { ...this.db, [name]: records }
     this.emit()
-    this.persistence.saveCollection(name, records, changed, removed).catch((e) => {
-      this.error = `Could not save: ${e instanceof Error ? e.message : String(e)}`
-      this.emit()
-    })
+    const entry = this.pending.get(name) ?? { changed: new Set<string>(), removed: new Set<string>() }
+    for (const id of changed) {
+      entry.changed.add(id)
+      entry.removed.delete(id)
+    }
+    for (const id of removed) {
+      entry.removed.add(id)
+      entry.changed.delete(id)
+    }
+    this.pending.set(name, entry)
+    void this.flush()
+  }
+
+  // ── Save queue ─────────────────────────────────────────────────────────
+  // Changes wait here until the database confirms them. If the connection
+  // drops, they stay queued and are retried, so nothing is silently lost.
+
+  private pending = new Map<CollectionName, { changed: Set<string>; removed: Set<string> }>()
+  private flushing = false
+  private again = false
+  private retryTimer: ReturnType<typeof setTimeout> | null = null
+  private retries = 0
+  /** True while changes are waiting because the server couldn't be reached. */
+  offline = false
+
+  /** Changes not yet confirmed by the database. */
+  get unsavedCount(): number {
+    let n = 0
+    for (const e of this.pending.values()) n += e.changed.size + e.removed.size
+    return n
+  }
+
+  /** Try saving queued changes now (for example from a "Try now" button). */
+  retryNow = () => {
+    if (this.retryTimer) clearTimeout(this.retryTimer)
+    this.retryTimer = null
+    void this.flush()
+  }
+
+  private async flush(): Promise<void> {
+    if (this.flushing) {
+      this.again = true
+      return
+    }
+    this.flushing = true
+    try {
+      do {
+        this.again = false
+        for (const [name, entry] of [...this.pending]) {
+          const records = this.all(name) as BaseRecord[]
+          const changed = [...entry.changed].filter((id) => records.some((r) => r.id === id))
+          const removed = [...entry.removed]
+          // Take ownership of these ids; anything changed meanwhile is re-queued.
+          this.pending.delete(name)
+          try {
+            if (changed.length || removed.length) await this.persistence.saveCollection(name, records, changed, removed)
+          } catch (e) {
+            const message = e instanceof Error ? e.message : String(e)
+            if (isNetworkError(message)) {
+              const back = this.pending.get(name) ?? { changed: new Set<string>(), removed: new Set<string>() }
+              for (const id of changed) if (!back.removed.has(id)) back.changed.add(id)
+              for (const id of removed) if (!back.changed.has(id)) back.removed.add(id)
+              this.pending.set(name, back)
+              this.offline = true
+              this.error = null
+              this.scheduleRetry()
+              this.emit()
+              return
+            }
+            // A real refusal (for example a permission rule): retrying won't help.
+            this.error = `Could not save: ${message}`
+            this.emit()
+          }
+        }
+      } while (this.again || (this.pending.size > 0 && !this.offline))
+      if (this.offline) {
+        this.offline = false
+        this.retries = 0
+        this.emit()
+      }
+    } finally {
+      this.flushing = false
+    }
+  }
+
+  private scheduleRetry() {
+    if (this.retryTimer) return
+    const delays = [2000, 5000, 10000, 20000, 30000, 60000]
+    const wait = delays[Math.min(this.retries, delays.length - 1)]
+    this.retries += 1
+    this.retryTimer = setTimeout(() => {
+      this.retryTimer = null
+      void this.flush()
+    }, wait)
+  }
+
+  /** Retry as soon as the device is back online or the tab is visible again. */
+  watchConnection(): () => void {
+    if (typeof window === 'undefined') return () => {}
+    const kick = () => {
+      if (this.unsavedCount) this.retryNow()
+    }
+    const onVisible = () => document.visibilityState === 'visible' && kick()
+    // Closing the tab with changes still waiting would lose them: ask first.
+    const onLeave = (e: BeforeUnloadEvent) => {
+      if (this.unsavedCount) e.preventDefault()
+    }
+    window.addEventListener('online', kick)
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('beforeunload', onLeave)
+    return () => {
+      window.removeEventListener('online', kick)
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('beforeunload', onLeave)
+    }
   }
 
   all<K extends CollectionName>(name: K): Collections[K][] {
@@ -244,4 +355,9 @@ export class Store {
     await this.persistence.saveAll(this.db)
     this.emit()
   }
+}
+
+/** The browser couldn't reach the server at all (as opposed to the server saying no). */
+export function isNetworkError(message: string): boolean {
+  return /failed to fetch|networkerror|network request failed|load failed|fetch failed|err_network|err_internet_disconnected/i.test(message)
 }

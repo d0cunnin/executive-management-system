@@ -26,6 +26,8 @@ export function EMSProvider({ children }: { children: ReactNode }) {
   }, [userId, attempt])
   const [readyFor, setReadyFor] = useState<Store | null>(null)
 
+  useEffect(() => ems.store.watchConnection(), [ems])
+
   useEffect(() => {
     let live = true
     ems.store.init().then(() => live && setReadyFor(ems.store))

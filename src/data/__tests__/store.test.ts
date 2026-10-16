@@ -59,3 +59,51 @@ describe('built-in areas', () => {
     expect(store.all('projects').length).toBe(old.projects.length)
   })
 })
+
+class FlakyPersistence implements Persistence {
+  readonly kind = 'local' as const
+  failures: string[] = []
+  saved: string[] = []
+  async load() {
+    return null
+  }
+  async saveCollection(_name: CollectionName, _records: BaseRecord[], changed: string[]) {
+    const next = this.failures.shift()
+    if (next) throw new Error(next)
+    this.saved.push(...changed)
+  }
+  async saveAll(_db: DB) {}
+}
+
+const settle = () => new Promise((r) => setTimeout(r, 0))
+
+describe('save queue', () => {
+  it('keeps a change when the connection drops and saves it on retry', async () => {
+    const p = new FlakyPersistence()
+    const store = new Store(p)
+    await store.init()
+    p.failures.push('TypeError: Failed to fetch')
+    const e = store.create('events', { title: 'Offline meeting', kind: 'meeting', start: '2026-10-20' })
+    await settle()
+    expect(store.offline).toBe(true)
+    expect(store.unsavedCount).toBe(1)
+    expect(store.error).toBeNull()
+
+    store.retryNow()
+    await settle()
+    expect(p.saved).toContain(e.id)
+    expect(store.offline).toBe(false)
+    expect(store.unsavedCount).toBe(0)
+  })
+
+  it('shows a real refusal instead of retrying forever', async () => {
+    const p = new FlakyPersistence()
+    const store = new Store(p)
+    await store.init()
+    p.failures.push('permission denied for table ems_events')
+    store.create('events', { title: 'Blocked', kind: 'meeting', start: '2026-10-20' })
+    await settle()
+    expect(store.offline).toBe(false)
+    expect(store.error).toMatch(/permission denied/)
+  })
+})
