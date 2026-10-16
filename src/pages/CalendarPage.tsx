@@ -116,7 +116,7 @@ export default function CalendarPage() {
                   onClick={() => setSelected(k)}
                   className={cn(
                     'min-h-16 border-b border-r border-line p-1.5 text-left align-top transition-colors sm:min-h-24',
-                    !inMonth && 'opacity-35',
+                    !inMonth && 'opacity-75',
                     selected === k ? 'bg-glow/10' : 'hover:bg-white/[0.03]',
                   )}
                 >

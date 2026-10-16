@@ -320,7 +320,7 @@ function ContentCalendar() {
               const k = toDateKey(d)
               const items = dated.filter((c) => c.publishDate === k)
               return (
-                <div key={k} className={cn('min-h-20 border-b border-r border-line p-1 sm:min-h-28', d.getMonth() !== cursor.getMonth() && 'opacity-35')}>
+                <div key={k} className={cn('min-h-20 border-b border-r border-line p-1 sm:min-h-28', d.getMonth() !== cursor.getMonth() && 'opacity-75')}>
                   <span className={cn('inline-grid h-6 w-6 place-items-center rounded-full text-xs', k === todayKey ? 'bg-glow text-white' : 'text-mist')}>{d.getDate()}</span>
                   <div className="mt-0.5 space-y-0.5">
                     {items.slice(0, 4).map((c) => (

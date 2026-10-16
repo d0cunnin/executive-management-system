@@ -14,6 +14,7 @@ import { NewInitiativeModal } from './initiative'
 import { NewProjectModal } from './NewProjectModal'
 import { notices } from './notifications'
 import { QuickCapture } from './QuickCapture'
+import { ThemeToggle } from './ThemeToggle'
 
 const MAIN: { to: string; label: string; icon: ReactNode }[] = [
   { to: '/', label: 'Today', icon: <Sun size={17} /> },
@@ -187,6 +188,7 @@ export function Layout() {
             <button className="btn-primary hidden sm:inline-flex" onClick={() => ui.openNewProject()}>
               <Plus size={15} /> New project
             </button>
+            <ThemeToggle />
             <Notifications />
           </div>
         </header>

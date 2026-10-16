@@ -50,6 +50,41 @@
       radial-gradient(1200px 600px at 85% -10%, rgb(110 80 255 / 0.18), transparent 60%),
       radial-gradient(900px 500px at -10% 110%, rgb(56 110 255 / 0.12), transparent 60%);
   }
+  /* Daytime theme. Light backgrounds always get dark text. The Command
+     Center (body[data-page='map']) never matches, so it stays dark. */
+  html[data-theme='light'] body:not([data-page='map']) {
+    color-scheme: light;
+    --color-ink-950: #f5f3ff;
+    --color-ink-900: #ffffff;
+    --color-ink-850: #f1eefc;
+    --color-ink-800: #e9e5fa;
+    --color-ink-700: #ddd7f5;
+    --color-line: rgb(60 50 140 / 0.14);
+    --color-line-strong: rgb(60 50 140 / 0.28);
+    --color-mist: #2b2652;
+    --color-muted: #5c5784;
+    /* "white" text becomes the darkest ink on light backgrounds */
+    --color-white: #16123a;
+    --color-glow: #5b4bd6;
+    --color-gold: #8a5a00;
+    --color-emerald-100: #065f46;
+    --color-emerald-200: #047857;
+    --color-emerald-300: #047857;
+    --color-amber-100: #78350f;
+    --color-amber-200: #92400e;
+    --color-amber-300: #8a4b08;
+    --color-rose-100: #881337;
+    --color-rose-200: #9f1239;
+    --color-rose-300: #be123c;
+    --color-violet-300: #6d28d9;
+    --color-sky-300: #0369a1;
+    background-image:
+      radial-gradient(1200px 650px at 85% -10%, rgb(139 110 255 / 0.16), transparent 62%),
+      radial-gradient(900px 550px at -10% 110%, rgb(90 140 255 / 0.1), transparent 62%);
+  }
+  html[data-theme='light'] body:not([data-page='map']) .glass {
+    box-shadow: 0 1px 2px rgb(30 20 90 / 0.06), 0 12px 32px -20px rgb(30 20 90 / 0.25);
+  }
   ::selection {
     background: rgb(139 124 255 / 0.4);
   }
@@ -74,7 +109,7 @@
   @apply inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
 }
 @utility btn-primary {
-  @apply btn bg-glow text-white hover:bg-[#9d90ff] shadow-[0_8px_24px_-8px_rgb(139_124_255/0.7)];
+  @apply btn bg-glow text-[#ffffff] hover:bg-[#9d90ff] shadow-[0_8px_24px_-8px_rgb(139_124_255/0.7)];
 }
 @utility btn-ghost {
   @apply btn border border-line text-mist hover:bg-white/5 hover:border-line-strong;
@@ -105,4 +140,10 @@
 
 @media (prefers-reduced-motion: reduce) {
   .rise { animation: none; }
+}
+
+/* Outside any layer on purpose, so it beats the text-color utilities:
+   solid purple buttons and badges keep white text in the daytime theme. */
+html[data-theme='light'] body:not([data-page='map']) .bg-glow {
+  color: #ffffff;
 }
