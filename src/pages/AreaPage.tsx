@@ -1,13 +1,16 @@
 import { Check, Plus, Wand2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { Link, useParams, useSearchParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { isOpen, needsAttention } from '../ai/intelligence'
 import { useDB, useEMS } from '../app/EMSContext'
 import { useUI } from '../app/UIContext'
 import { MoveAreaForward } from '../components/MoveForward'
+import { BrandSetup, InitiativeCampaigns, PeopleAndEvents } from '../components/initiative'
 import { ProjectCard } from '../components/ProjectCard'
 import { Calm, ModeBadge, PageHeader, Panel, Progress } from '../components/ui'
 import { CADENCE_LABEL, CERTAINTY_LABEL, CHANNEL_LABEL, VERDICT_LABEL } from '../domain/labels'
+import { missingBrandConfig } from '../domain/content'
+import { useSearchState } from '../lib/urlState'
 import { cn, daysSince, money } from '../lib/util'
 
 export default function AreaPage() {
@@ -15,7 +18,8 @@ export default function AreaPage() {
   const db = useDB()
   const { store } = useEMS()
   const ui = useUI()
-  const [params, setParams] = useSearchParams()
+  const [params, update] = useSearchState()
+  const tab = params.get('tab') ?? 'overview'
   const area = db.areas.find((a) => a.slug === slug)
   const [editingState, setEditingState] = useState(false)
   const [stateText, setStateText] = useState('')
@@ -42,6 +46,7 @@ export default function AreaPage() {
 
   if (!area || !data) return <Calm>That area does not exist.</Calm>
 
+  const brandGaps = missingBrandConfig(area, db.brandSettings.find((b) => b.areaId === area.id))
   const actual = data.income.filter((i) => i.certainty === 'actual').reduce((s, i) => s + i.amount, 0)
   const pending = data.income.filter((i) => i.certainty !== 'actual').reduce((s, i) => s + i.amount, 0)
 
@@ -56,7 +61,7 @@ export default function AreaPage() {
             <button className="btn-ghost" onClick={() => ui.openNewProject({ areaId: area.id })}>
               <Plus size={15} /> New project
             </button>
-            <button className="btn-primary" onClick={() => setParams(moving ? {} : { move: '1' })}>
+            <button className="btn-primary" onClick={() => update((p) => (moving ? p.delete('move') : p.set('move', '1')))}>
               <Wand2 size={15} /> {moving ? 'Hide' : 'Move this forward'}
             </button>
           </>
@@ -69,6 +74,26 @@ export default function AreaPage() {
         </Panel>
       )}
 
+      <div className="flex flex-wrap gap-2" role="tablist">
+        {(
+          [
+            ['overview', 'Overview'],
+            ['campaigns', 'Campaigns & content'],
+            ['brand', `Brand & setup${brandGaps.length ? ` · ${brandGaps.length} to do` : ''}`],
+            ['people', 'People & events'],
+          ] as const
+        ).map(([k, l]) => (
+          <button key={k} role="tab" aria-selected={tab === k} className={cn('btn-ghost py-1.5 text-xs', tab === k && 'border-glow/60 bg-glow/10 text-white')} onClick={() => update((p) => p.set('tab', k))}>
+            {l}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'campaigns' && <InitiativeCampaigns area={area} />}
+      {tab === 'brand' && <BrandSetup key={area.id} area={area} />}
+      {tab === 'people' && <PeopleAndEvents area={area} />}
+
+      {tab === 'overview' && (
       <div className="grid gap-5 xl:grid-cols-3">
         <div className="space-y-5 xl:col-span-2">
           <Panel
@@ -194,11 +219,9 @@ export default function AreaPage() {
                         ))}
                       </div>
                     )}
-                    {c.projectId && (
-                      <Link to={`/projects/${c.projectId}?move=1`} className="mt-2 inline-block text-xs text-glow hover:underline">
-                        Move this campaign forward →
-                      </Link>
-                    )}
+                    <Link to={`/studio/campaigns/${c.id}`} className="mt-2 inline-block text-xs text-glow hover:underline">
+                      Open in Content Studio →
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -324,6 +347,7 @@ export default function AreaPage() {
           )}
         </div>
       </div>
+      )}
     </div>
   )
 }

@@ -22,6 +22,7 @@ export const AREA_IDS = {
   team: 'area_team',
   wellness: 'area_wellness',
   nursing: 'area_nursing',
+  hub: 'area_hub',
 } as const
 
 const A = AREA_IDS
@@ -60,6 +61,8 @@ export const AREAS: Area[] = [
   area(A.content, 'content', 'Content + Media', 'function', '#fb7185', 'YouTube, podcast, social, Substack, email',
     ['YouTube', 'YouTube Shorts', 'Podcast', 'Instagram', 'Facebook', 'TikTok', 'LinkedIn', 'Substack', 'Email', 'Content calendar'],
     [A.business]),
+  area(A.hub, 'growth-innovation-hub', 'Growth & Innovation Hub', 'organization', '#fb923c', 'Qualified leads and inquiries for the Hub',
+    ['Lead generation', 'Educational content', 'Programs and services', 'Inquiries', 'Follow-up'], [A.business, A.content]),
   area(A.ideas, 'ideas', 'Ideas + Opportunities', 'system', '#5eead4', 'Things you might build, teach, or sell', ['Ideas', 'Opportunities'], [A.business]),
   area(A.team, 'ai-team', 'My AI Team', 'system', '#93c5fd', 'Your assistants and what they are doing', ['Assistants', 'Approvals', 'Activity'], []),
   area(A.nursing, 'nursing-school', 'Nursing School', 'school', '#67e8f9', 'Classes, clinicals, exams, NCLEX',
@@ -69,12 +72,12 @@ export const AREAS: Area[] = [
 ]
 
 export const AGENTS: Omit<Agent, 'id' | 'createdAt' | 'updatedAt'>[] = [
-  { key: 'executive', name: 'Executive Assistant', purpose: 'Sees the whole picture and helps you decide what matters.', areaIds: [], skills: ['daily_brief', 'weekly_review', 'monthly_review', 'quarterly_review', 'what_next', 'needs_attention_scan'] },
+  { key: 'executive', name: 'Executive Assistant', purpose: 'Sees the whole picture and helps you decide what matters.', areaIds: [], skills: ['daily_brief', 'campaign_brief', 'weekly_review', 'monthly_review', 'quarterly_review', 'what_next', 'needs_attention_scan'] },
   { key: 'personal', name: 'Personal Assistant', purpose: 'Keeps personal admin and appointments organized.', areaIds: [A.personal], skills: ['organize_captures', 'prep_appointments'] },
-  { key: 'project', name: 'Project Assistant', purpose: 'Moves projects forward and finds what is blocking them.', areaIds: [], skills: ['move_forward', 'break_down_project', 'finish_project'] },
+  { key: 'project', name: 'Project Assistant', purpose: 'Moves projects forward and finds what is blocking them.', areaIds: [], skills: ['move_forward', 'break_down_project', 'finish_project', 'campaign_tasks'] },
   { key: 'admin', name: 'Administrative Assistant', purpose: 'Follow-ups, documents, recurring admin.', areaIds: [], skills: ['draft_follow_up', 'waiting_on_review'] },
-  { key: 'marketing', name: 'Marketing Assistant', purpose: 'Builds campaign strategy grounded in audience and offer.', areaIds: [A.content], skills: ['campaign_strategy', 'draft_email'] },
-  { key: 'social', name: 'Social Media Assistant', purpose: 'Writes platform-specific posts, never one copy pasted everywhere.', areaIds: [A.content], skills: ['social_posts', 'repurpose'] },
+  { key: 'marketing', name: 'Marketing Assistant', purpose: 'Builds campaign strategy grounded in audience and offer.', areaIds: [A.content], skills: ['campaign_strategy', 'draft_email', 'campaign_drafts'] },
+  { key: 'social', name: 'Social Media Assistant', purpose: 'Writes platform-specific posts, never one copy pasted everywhere.', areaIds: [A.content], skills: ['social_posts', 'repurpose', 'campaign_drafts'] },
   { key: 'business', name: 'Business Assistant', purpose: 'Finds income in what you already have.', areaIds: [A.business], skills: ['monetize_assets', 'evaluate_idea'] },
   { key: 'research', name: 'Research Assistant', purpose: 'Researches topics with current, cited sources.', areaIds: [], skills: ['research_brief'] },
   { key: 'writing', name: 'Writing Assistant', purpose: 'Drafts written materials in your voice.', areaIds: [A.books], skills: ['draft_outline'] },
@@ -150,8 +153,8 @@ export function buildSeed(): DB {
       { id: 'o7', title: 'Morning movement', areaId: A.wellness, cadence: 'daily', mode: 'me', lastDoneAt: ago(1), ...s() },
     ],
     campaigns: [
-      { id: 'c_summit', name: 'Summit registration', areaId: A.summit, projectId: 'p_summit_reg', objective: 'Registrations', audience: 'Faith leaders, counselors, and church members who care about mental health', message: 'Faith and mental health belong in the same conversation.', offer: 'Early-bird registration', cta: 'Register now', channels: ['instagram', 'facebook', 'email', 'linkedin'], startDate: dayOffset(-14), endDate: dayOffset(60), status: 'active', metrics: { reach: 8400, engagementRate: 3.1, clicks: 260, registrations: 112 }, ...s() },
-      { id: 'c_fmh_launch', name: 'FMH 101 course launch', areaId: A.dbm, projectId: 'p_fmh101', objective: 'Enrollment', channels: ['email', 'instagram', 'youtube'], status: 'planning', ...s() },
+      { id: 'c_summit', name: 'Summit registration', areaId: A.summit, projectId: 'p_summit_reg', objective: 'registrations', audience: 'Faith leaders, counselors, and church members who care about mental health', message: 'Faith and mental health belong in the same conversation.', offer: 'Early-bird registration', cta: 'Register now', channels: ['instagram', 'facebook', 'email', 'linkedin'], startDate: dayOffset(-14), endDate: dayOffset(60), status: 'active', successMetrics: ['registrations', 'clicks', 'reach'], ...s() },
+      { id: 'c_fmh_launch', name: 'FMH 101 course launch', areaId: A.dbm, projectId: 'p_fmh101', objective: 'registrations', channels: ['email', 'instagram', 'youtube'], status: 'planning', ...s() },
     ],
     events: [
       { id: 'e1', title: 'Summit planning call', kind: 'meeting', start: dayOffset(0, 10), end: dayOffset(0, 11), areaId: A.summit, ...s() },
@@ -188,10 +191,10 @@ export function buildSeed(): DB {
       { id: 'in6', label: 'Build Your Ark Substack (paid subs)', amount: 310, certainty: 'actual', date: dayOffset(-1), areaId: A.ark, source: 'membership', ...s() },
     ],
     content: [
-      { id: 'ct1', title: 'Why the church needs to talk about anxiety', areaId: A.summit, channel: 'instagram', kind: 'post', status: 'published', publishDate: dayOffset(-5), campaignId: 'c_summit', ...s() },
-      { id: 'ct2', title: 'Ark Substack #3: Start with water', areaId: A.ark, channel: 'substack', kind: 'article', status: 'published', publishDate: dayOffset(-7), ...s() },
-      { id: 'ct3', title: 'Summit speaker spotlight', areaId: A.summit, channel: 'facebook', kind: 'post', status: 'draft', campaignId: 'c_summit', ...s() },
-      { id: 'ct4', title: 'Ark Substack #4', areaId: A.ark, channel: 'substack', kind: 'article', status: 'idea', publishDate: dayOffset(1), ...s() },
+      { id: 'ct1', title: 'Why the church needs to talk about anxiety', areaId: A.summit, channel: 'instagram', kind: 'post', status: 'published', publishDate: dayOffset(-5), campaignId: 'c_summit', body: 'Sample post copy.', version: 1, publishing: { via: 'Meta Business Suite', publishedAt: dayOffset(-5), publishedRecordedBy: 'Sample data' }, ...s() },
+      { id: 'ct2', title: 'Ark Substack #3: Start with water', areaId: A.ark, channel: 'substack', kind: 'article', status: 'published', publishDate: dayOffset(-7), body: 'Sample article.', version: 1, publishing: { via: 'Substack', publishedAt: dayOffset(-7), publishedRecordedBy: 'Sample data' }, ...s() },
+      { id: 'ct3', title: 'Summit speaker spotlight', areaId: A.summit, channel: 'facebook', kind: 'post', status: 'needs_review', campaignId: 'c_summit', publishDate: dayOffset(3), body: 'Sample draft: introduce a Summit speaker and why their session matters to faith leaders. [Speaker details need confirmation]', cta: 'Register now', audience: 'Faith leaders and church members', createdByAgent: 'social', engine: 'builtin', version: 1, ...s() },
+      { id: 'ct4', title: 'Ark Substack #4', areaId: A.ark, channel: 'substack', kind: 'article', status: 'draft', publishDate: dayOffset(1), version: 1, ...s() },
     ],
     assets: [
       { id: 'as_bh_workbook', title: 'Becoming Her workbook', kind: 'workbook', areaId: A.becoming, status: 'in_progress', ...s() },
@@ -247,5 +250,14 @@ export function buildSeed(): DB {
       { id: 'pr5', kind: 'decision', title: 'Set FMH 101 launch price', areaId: A.dbm, projectId: 'p_fmh101', at: ago(4), ...s() },
     ],
     captures: [],
+    contentRevisions: [],
+    contentEvents: [],
+    campaignMetrics: [
+      { id: 'cm1', campaignId: 'c_summit', metric: 'registrations', value: 112, kind: 'actual', source: 'Sample data', periodStart: dayOffset(-14), periodEnd: dayOffset(0), ...s() },
+      { id: 'cm2', campaignId: 'c_summit', metric: 'clicks', value: 260, kind: 'actual', source: 'Sample data', periodStart: dayOffset(-14), periodEnd: dayOffset(0), ...s() },
+      { id: 'cm3', campaignId: 'c_summit', metric: 'reach', value: 8400, kind: 'actual', source: 'Sample data', periodStart: dayOffset(-14), periodEnd: dayOffset(0), ...s() },
+      { id: 'cm4', campaignId: 'c_summit', metric: 'registrations', value: 300, kind: 'target', source: 'Sample data', ...s() },
+    ],
+    brandSettings: [],
   }
 }

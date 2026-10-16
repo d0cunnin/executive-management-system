@@ -3,10 +3,13 @@
 // so swapping localStorage for Supabase never touches UI code.
 import type { BaseRecord, CollectionName, Collections, DB, ProgressEntry } from '../domain/types'
 import { nowIso, uid } from '../lib/util'
+import { normalizeContent } from '../domain/content'
 import { AGENTS, AREAS, buildSeed } from './seed'
 
 export interface Persistence {
   readonly kind: 'local' | 'supabase'
+  /** Tables that don't exist yet in the database (Supabase only). */
+  readonly missing?: string[]
   load(): Promise<DB | null>
   /** Called after every change with the changed collection's records. */
   saveCollection(name: CollectionName, records: BaseRecord[], changedIds: string[], removedIds: string[]): Promise<void>
@@ -20,6 +23,7 @@ const EMPTY: DB = {
   areas: [], learningAreas: [], projects: [], milestones: [], tasks: [], ongoing: [], goals: [], campaigns: [],
   events: [], ideas: [], income: [], offers: [], content: [], assets: [], contacts: [], notes: [], links: [],
   wellness: [], agents: [], actions: [], notifications: [], progress: [], captures: [],
+  contentRevisions: [], contentEvents: [], campaignMetrics: [], brandSettings: [],
 }
 
 export class Store {
@@ -41,6 +45,8 @@ export class Store {
       if (loaded) {
         // Fill any collections added since the data was saved.
         this.db = { ...EMPTY, ...loaded }
+        // Older content used other status names; map them in memory only.
+        this.db = { ...this.db, content: this.db.content.map(normalizeContent) }
         await this.addMissingBuiltins()
       } else {
         this.db = buildSeed()
@@ -65,6 +71,18 @@ export class Store {
       this.db = { ...this.db, areas: [...this.db.areas, ...areas] }
       await this.persistence.saveCollection('areas', this.db.areas, areas.map((a) => a.id), [])
     }
+    // Assistants that already exist gain any new built-in skills; nothing is removed.
+    const grown = this.db.agents
+      .map((x) => {
+        const def = AGENTS.find((a) => a.key === x.key)
+        const extra = def?.skills.filter((sk) => !x.skills.includes(sk)) ?? []
+        return extra.length ? { ...x, skills: [...x.skills, ...extra], updatedAt: now } : null
+      })
+      .filter((x): x is NonNullable<typeof x> => !!x)
+    if (grown.length) {
+      this.db = { ...this.db, agents: this.db.agents.map((x) => grown.find((g) => g.id === x.id) ?? x) }
+      await this.persistence.saveCollection('agents', this.db.agents, grown.map((g) => g.id), [])
+    }
     const agents = AGENTS.filter((a) => !this.db.agents.some((x) => x.key === a.key)).map((a) => ({ ...a, id: `agent_${a.key}`, createdAt: now, updatedAt: now }))
     if (agents.length) {
       this.db = { ...this.db, agents: [...this.db.agents, ...agents] }
@@ -72,7 +90,12 @@ export class Store {
     }
   }
 
-  subscribe = (fn: Listener) => {
+  /** Database tables the Content Studio needs that don't exist yet. */
+  get setupMissing(): string[] {
+    return this.persistence.missing ?? []
+  }
+
+    subscribe = (fn: Listener) => {
     this.listeners.add(fn)
     return () => this.listeners.delete(fn)
   }
@@ -115,6 +138,49 @@ export class Store {
       return updated
     })
     if (updated) this.commit(name, next, [id])
+    return updated
+  }
+
+  /**
+   * Like create/update, but waits for the database. If saving fails the
+   * change is undone and the error is thrown, so the screen never shows
+   * something (an approval, say) that didn't actually save.
+   */
+  async createConfirmed<K extends CollectionName>(name: K, data: Omit<Collections[K], keyof BaseRecord> & Partial<BaseRecord>): Promise<Collections[K]> {
+    const before = this.all(name)
+    const now = nowIso()
+    const record = { id: uid(name.slice(0, 3)), createdAt: now, updatedAt: now, ...data } as Collections[K]
+    const next = [...before, record]
+    this.db = { ...this.db, [name]: next }
+    this.emit()
+    try {
+      await this.persistence.saveCollection(name, next, [record.id], [])
+    } catch (e) {
+      this.db = { ...this.db, [name]: before }
+      this.emit()
+      throw e
+    }
+    return record
+  }
+
+  async updateConfirmed<K extends CollectionName>(name: K, id: string, patch: Partial<Collections[K]>): Promise<Collections[K]> {
+    const before = this.all(name)
+    let updated: Collections[K] | undefined
+    const next = before.map((r) => {
+      if (r.id !== id) return r
+      updated = { ...r, ...patch, updatedAt: nowIso() }
+      return updated
+    })
+    if (!updated) throw new Error('That record no longer exists.')
+    this.db = { ...this.db, [name]: next }
+    this.emit()
+    try {
+      await this.persistence.saveCollection(name, next, [id], [])
+    } catch (e) {
+      this.db = { ...this.db, [name]: before }
+      this.emit()
+      throw e
+    }
     return updated
   }
 

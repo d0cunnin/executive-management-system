@@ -6,7 +6,7 @@ import { cn } from '../lib/util'
 
 export function Panel({ title, hint, action, children, className, id }: { title: string; hint?: string; action?: ReactNode; children: ReactNode; className?: string; id?: string }) {
   return (
-    <section id={id} className={cn('glass rise p-4 sm:p-5', className)}>
+    <section id={id} className={cn('glass rise min-w-0 p-4 sm:p-5', className)}>
       <header className="mb-3 flex items-center justify-between gap-3">
         <div>
           <h2 className="label">{title}</h2>

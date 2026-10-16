@@ -87,6 +87,7 @@ export const CHANNEL_LABEL: Record<Channel, string> = {
   substack: 'Substack',
   email: 'Email',
   podcast: 'Podcast',
+  website: 'Website',
 }
 
 export const ENTITY_LABEL: Record<EntityType, string> = {

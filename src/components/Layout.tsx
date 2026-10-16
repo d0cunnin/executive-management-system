@@ -1,6 +1,6 @@
 import {
   Bell, BookOpen, Bot, CalendarDays, CheckSquare, Compass, FileText, Heart, Lightbulb, LogOut, Menu, MessageCircle,
-  Network, Plus, Search, Sparkles, Sun, Wallet, X,
+  Megaphone, Network, Plus, Search, Sparkles, Sun, Wallet, X,
 } from 'lucide-react'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
@@ -10,6 +10,7 @@ import { useAuth } from '../auth/AuthContext'
 import { cn } from '../lib/util'
 import { CommandPalette } from './CommandPalette'
 import { ErrorBoundary } from './ErrorBoundary'
+import { NewInitiativeModal } from './initiative'
 import { NewProjectModal } from './NewProjectModal'
 import { notices } from './notifications'
 import { QuickCapture } from './QuickCapture'
@@ -21,6 +22,7 @@ const MAIN: { to: string; label: string; icon: ReactNode }[] = [
   { to: '/work', label: 'My Work', icon: <Compass size={17} /> },
   { to: '/tasks', label: 'To-dos', icon: <CheckSquare size={17} /> },
   { to: '/calendar', label: 'Calendar', icon: <CalendarDays size={17} /> },
+  { to: '/studio', label: 'Content Studio', icon: <Megaphone size={17} /> },
   { to: '/ideas', label: 'Ideas & Opportunities', icon: <Lightbulb size={17} /> },
   { to: '/income', label: 'Income', icon: <Wallet size={17} /> },
   { to: '/wellness', label: 'Wellness', icon: <Heart size={17} /> },
@@ -31,8 +33,9 @@ const MAIN: { to: string; label: string; icon: ReactNode }[] = [
 
 function NavItems({ onNavigate }: { onNavigate?: () => void }) {
   const db = useDB()
-  const approvals = db.actions.filter((a) => a.state === 'needs_approval').length
+  const approvals = db.actions.filter((a) => a.state === 'needs_approval').length + db.content.filter((c) => c.status === 'needs_review').length
   const areas = db.areas.filter((a) => a.kind !== 'system' && a.slug !== 'wellness')
+  const [newInitiative, setNewInitiative] = useState(false)
   return (
     <nav className="space-y-6">
       <ul className="space-y-0.5">
@@ -54,7 +57,13 @@ function NavItems({ onNavigate }: { onNavigate?: () => void }) {
         ))}
       </ul>
       <div>
-        <p className="label mb-2 px-3">My areas</p>
+        <div className="mb-2 flex items-center justify-between px-3">
+          <p className="label">My areas</p>
+          <button className="text-muted hover:text-white" onClick={() => setNewInitiative(true)} aria-label="New initiative" title="New initiative">
+            <Plus size={14} />
+          </button>
+        </div>
+        <NewInitiativeModal open={newInitiative} onClose={() => setNewInitiative(false)} />
         <ul className="space-y-0.5">
           {areas.map((a) => (
             <li key={a.id}>

@@ -150,21 +150,60 @@ export type Channel =
   | 'substack'
   | 'email'
   | 'podcast'
+  | 'website'
 
+export type CampaignStatus = 'planning' | 'active' | 'paused' | 'completed' | 'archived'
+
+/** A campaign belongs to one initiative (area). Content drafts hang off it. */
 export interface Campaign extends BaseRecord {
   name: string
+  /** The initiative this campaign serves. */
   areaId: ID
   projectId?: ID
+  /** An objective key from domain/content.ts OBJECTIVES, or free text on older records. */
   objective: string
   audience?: string
+  description?: string
   message?: string
   offer?: string
+  /** Primary call to action. */
   cta?: string
+  /** Platforms. */
   channels: Channel[]
   startDate?: string
   endDate?: string
-  status: 'planning' | 'active' | 'completed' | 'paused'
+  owner?: string
+  /** Metric keys that define success for this campaign. */
+  successMetrics?: string[]
+  status: CampaignStatus
+  /** Older records only: numbers entered before metrics had sources. */
   metrics?: Record<string, number>
+}
+
+/**
+ * Internal approval lifecycle. "scheduled" and "published" are only reached
+ * by recording a real external action (see PublishingRecord).
+ */
+export type ContentStatus = 'draft' | 'needs_review' | 'changes_requested' | 'approved' | 'scheduled' | 'published' | 'archived'
+
+export interface MediaRef {
+  label: string
+  url?: string
+  note?: string
+}
+
+/** What actually happened outside EMS. Entered by a person, never assumed. */
+export interface PublishingRecord {
+  /** Where it was scheduled or posted: Meta Business Suite, TikTok, YouTube Studio, email platform… */
+  via?: string
+  scheduledFor?: string
+  externalRef?: string
+  scheduledRecordedAt?: string
+  scheduledRecordedBy?: string
+  publishedAt?: string
+  url?: string
+  publishedRecordedAt?: string
+  publishedRecordedBy?: string
 }
 
 // ── Calendar ────────────────────────────────────────────────────────────────
@@ -244,13 +283,88 @@ export interface Offer extends BaseRecord {
 
 export interface ContentItem extends BaseRecord {
   title: string
+  /** Initiative. */
   areaId?: ID
+  /** Target platform. */
   channel?: Channel
-  kind: 'post' | 'video' | 'short' | 'article' | 'email' | 'episode' | 'chapter' | 'lesson'
-  status: 'idea' | 'draft' | 'needs_approval' | 'approved' | 'scheduled' | 'published'
+  kind: 'post' | 'video' | 'short' | 'article' | 'email' | 'episode' | 'chapter' | 'lesson' | 'reel' | 'carousel'
+  status: ContentStatus
+  /** Planned publishing date (yyyy-mm-dd). Planning only, not a real schedule. */
   publishDate?: string
   body?: string
   campaignId?: ID
+  audience?: string
+  cta?: string
+  hashtags?: string[]
+  media?: MediaRef[]
+  /** Email only. */
+  subject?: string
+  previewText?: string
+  listRef?: string
+  /** Person responsible, or the assistant that drafted it. */
+  owner?: string
+  createdByAgent?: string
+  engine?: 'builtin' | 'ai' | 'manual'
+  version?: number
+  updatedBy?: string
+  approvedBy?: string
+  approvedAt?: string
+  changesRequestedReason?: string
+  publishing?: PublishingRecord
+}
+
+/** A saved copy of a draft before each change. */
+export interface ContentRevision extends BaseRecord {
+  contentId: ID
+  version: number
+  snapshot: Pick<ContentItem, 'title' | 'body' | 'cta' | 'hashtags' | 'publishDate' | 'channel' | 'campaignId' | 'areaId' | 'media' | 'subject' | 'previewText' | 'audience'>
+  changedBy: string
+  note?: string
+}
+
+/** Every status change: who, when, why. */
+export interface ContentEvent extends BaseRecord {
+  contentId: ID
+  from: ContentStatus
+  to: ContentStatus
+  by: string
+  reason?: string
+}
+
+/** One reported number for a campaign, with where it came from. */
+export interface CampaignMetric extends BaseRecord {
+  campaignId: ID
+  metric: string
+  value: number
+  /** Targets are goals, not results. */
+  kind: 'actual' | 'target'
+  periodStart?: string
+  periodEnd?: string
+  source?: string
+  enteredBy?: string
+  note?: string
+}
+
+/** A focus area, pathway, program or workstream inside an initiative. */
+export interface Workstream {
+  name: string
+  description?: string
+}
+
+/** Initiative-level brand and campaign guidance used by people and assistants. */
+export interface BrandSettings extends BaseRecord {
+  areaId: ID
+  description?: string
+  audience?: string
+  tone?: string
+  mission?: string
+  messaging?: string
+  approvedCtas?: string[]
+  assets?: MediaRef[]
+  restrictions?: string
+  approvedLinks?: string[]
+  platformGuidance?: Partial<Record<Channel, string>>
+  workstreams?: Workstream[]
 }
 
 /** Books, workbooks, courses, curricula — things D'Andrea has made or is making. */
@@ -332,6 +446,8 @@ export interface AIAction extends BaseRecord {
   projectId?: ID
   areaId?: ID
   taskId?: ID
+  campaignId?: ID
+  contentId?: ID
   /** "builtin" = rule-based planner, "ai" = real model. Shown in the UI. */
   engine: 'builtin' | 'ai'
   executedNote?: string
@@ -389,6 +505,10 @@ export interface Collections {
   notifications: Notification
   progress: ProgressEntry
   captures: Capture
+  contentRevisions: ContentRevision
+  contentEvents: ContentEvent
+  campaignMetrics: CampaignMetric
+  brandSettings: BrandSettings
 }
 
 export type CollectionName = keyof Collections

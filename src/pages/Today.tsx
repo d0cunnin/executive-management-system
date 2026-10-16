@@ -52,7 +52,7 @@ export default function Today() {
   const next = useMemo(() => whatNext(db), [db])
   const load = loadCheck(db)
   const focus = focusAdvice(db)
-  const approvals = db.actions.filter((a) => a.state === 'needs_approval')
+  const approvals = [...db.actions.filter((a) => a.state === 'needs_approval'), ...db.content.filter((c) => c.status === 'needs_review')]
 
   const doForMe = async (t: Task) => {
     setRunning(t.id)
