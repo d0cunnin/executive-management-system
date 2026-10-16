@@ -4,15 +4,17 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Cormorant Garamond", ui-serif, Georgia, serif;
 
-  --color-ink-950: #07061a;
-  --color-ink-900: #0d0b26;
-  --color-ink-850: #120f33;
-  --color-ink-800: #18143f;
-  --color-ink-700: #241e57;
-  --color-line: rgb(165 160 255 / 0.12);
-  --color-line-strong: rgb(165 160 255 / 0.24);
-  --color-mist: #c9c6ef;
-  --color-muted: #8f8bc0;
+  /* Brighter evening indigo. The Command Center keeps the original deep
+     palette (see body[data-page="map"] below). */
+  --color-ink-950: #17143d;
+  --color-ink-900: #211c52;
+  --color-ink-850: #28225e;
+  --color-ink-800: #302969;
+  --color-ink-700: #3d3585;
+  --color-line: rgb(190 185 255 / 0.2);
+  --color-line-strong: rgb(190 185 255 / 0.34);
+  --color-mist: #e4e2fb;
+  --color-muted: #aeaadb;
   --color-glow: #8b7cff;
   --color-gold: #e8c77a;
 }
@@ -29,9 +31,24 @@
   body {
     @apply bg-ink-950 text-mist font-sans antialiased;
     background-image:
+      radial-gradient(1200px 650px at 85% -10%, rgb(139 110 255 / 0.34), transparent 62%),
+      radial-gradient(900px 550px at -10% 110%, rgb(90 140 255 / 0.22), transparent 62%);
+    background-attachment: fixed;
+  }
+  /* Command Center: the original deep palette, as D'Andrea prefers it there. */
+  body[data-page='map'] {
+    --color-ink-950: #07061a;
+    --color-ink-900: #0d0b26;
+    --color-ink-850: #120f33;
+    --color-ink-800: #18143f;
+    --color-ink-700: #241e57;
+    --color-line: rgb(165 160 255 / 0.12);
+    --color-line-strong: rgb(165 160 255 / 0.24);
+    --color-mist: #c9c6ef;
+    --color-muted: #8f8bc0;
+    background-image:
       radial-gradient(1200px 600px at 85% -10%, rgb(110 80 255 / 0.18), transparent 60%),
       radial-gradient(900px 500px at -10% 110%, rgb(56 110 255 / 0.12), transparent 60%);
-    background-attachment: fixed;
   }
   ::selection {
     background: rgb(139 124 255 / 0.4);

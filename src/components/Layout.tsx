@@ -124,6 +124,11 @@ export function Layout() {
     setDrawer(false)
   }, [location.pathname])
 
+  // Lets the Command Center keep its own darker palette (see index.css).
+  useEffect(() => {
+    document.body.dataset.page = location.pathname === '/map' ? 'map' : ''
+  }, [location.pathname])
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
