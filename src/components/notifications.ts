@@ -16,7 +16,7 @@ export interface Notice {
  */
 export function notices(db: DB): Notice[] {
   const out: Notice[] = []
-  const approvals = db.actions.filter((a) => a.state === 'needs_approval')
+  const approvals = [...db.content.filter((c) => c.status === 'needs_review'), ...db.actions.filter((a) => a.state === 'needs_approval')]
   if (approvals.length) out.push({ key: 'approvals', kind: 'approval', title: `${approvals.length} item${approvals.length === 1 ? '' : 's'} need your approval`, body: approvals[0].title, href: '/team' })
   for (const a of needsAttention(db).filter((a) => a.severity === 3).slice(0, 3)) out.push({ key: `att_${a.key}`, kind: 'attention', title: a.title, body: a.why, href: a.href })
   for (const e of comingUp(db, 1).filter((e) => e.kind !== 'wellness').slice(0, 2)) out.push({ key: `ev_${e.id}`, kind: 'upcoming', title: e.title, body: `${friendlyDate(e.start)} ${timeOf(e.start)}`.trim(), href: '/calendar' })

@@ -2,21 +2,32 @@ import { Loader2, Sparkles } from 'lucide-react'
 import { useState } from 'react'
 import { SKILLS, runSkill } from '../ai/skills'
 import { useDB, useEMS } from '../app/EMSContext'
+import { Link } from 'react-router-dom'
 import { ActionCard } from '../components/ActionCard'
+import { ContentApprovalCard } from '../components/ContentApprovalCard'
+import { StudioSetupNotice } from '../components/studio'
+import { CONTENT_STATUS_LABEL } from '../domain/content'
 import { Calm, PageHeader, Panel } from '../components/ui'
 import { MODE_LABEL } from '../domain/labels'
 import { cn } from '../lib/util'
 
 /** Skills that can run on their own without a project selected. */
-const STANDALONE = new Set(['daily_brief', 'weekly_review', 'monthly_review', 'quarterly_review', 'what_next', 'needs_attention_scan', 'organize_captures', 'prep_appointments', 'waiting_on_review', 'monetize_assets', 'launch_checklist', 'event_runsheet', 'grant_prep', 'ministry_plan', 'wellness_check', 'repurpose', 'study_plan'])
+const STANDALONE = new Set(['daily_brief', 'campaign_brief', 'weekly_review', 'monthly_review', 'quarterly_review', 'what_next', 'needs_attention_scan', 'organize_captures', 'prep_appointments', 'waiting_on_review', 'monetize_assets', 'launch_checklist', 'event_runsheet', 'grant_prep', 'ministry_plan', 'wellness_check', 'repurpose', 'study_plan'])
+
+/** Skills that live on a campaign page in Content Studio. */
+const CAMPAIGN_SKILLS: Record<string, string> = { campaign_drafts: 'Platform drafts for a campaign', campaign_tasks: 'Turn a campaign into tasks' }
 
 export default function Team() {
   const db = useDB()
   const { store, ai } = useEMS()
   const [running, setRunning] = useState<string | null>(null)
   const [tab, setTab] = useState<'approve' | 'activity'>('approve')
+  const [flash, setFlash] = useState<{ ok: boolean; text: string } | null>(null)
   const approvals = db.actions.filter((a) => a.state === 'needs_approval')
   const drafts = db.actions.filter((a) => a.state === 'draft')
+  const reviewQueue = db.content.filter((c) => c.status === 'needs_review').sort((a, b) => (a.publishDate ?? '9').localeCompare(b.publishDate ?? '9'))
+  const sentBack = db.content.filter((c) => c.status === 'changes_requested')
+  const contentEvents = db.contentEvents.slice().sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 15)
   const history = db.actions.filter((a) => a.state === 'executed' || a.state === 'approved' || a.state === 'declined').sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
 
   return (
@@ -55,6 +66,12 @@ export default function Team() {
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   {a.skills.map((s) => {
                     const def = SKILLS[s]
+                    if (CAMPAIGN_SKILLS[s])
+                      return (
+                        <Link key={s} to="/studio?tab=campaigns" className="chip cursor-pointer hover:border-glow/60 hover:text-white" title="Runs from a campaign in Content Studio">
+                          {CAMPAIGN_SKILLS[s]} →
+                        </Link>
+                      )
                     if (!def) return null
                     const canRun = STANDALONE.has(s)
                     const k = `${a.key}_${s}`
@@ -62,7 +79,7 @@ export default function Team() {
                       <button
                         key={s}
                         disabled={!canRun || running === k}
-                        title={canRun ? `Run: ${def.name}` : 'Runs from a project’s Move This Forward'}
+                        title={canRun ? `Run: ${def.name}` : 'Runs from a project’s Move This Forward or a campaign'}
                         className={cn('chip', canRun ? 'cursor-pointer hover:border-glow/60 hover:text-white' : 'opacity-60')}
                         onClick={async () => {
                           setRunning(k)
@@ -85,7 +102,7 @@ export default function Team() {
         <div className="space-y-4">
           <div className="flex gap-2">
             <button className={cn('btn-ghost text-xs', tab === 'approve' && 'border-glow/60 bg-glow/10 text-white')} onClick={() => setTab('approve')}>
-              Waiting on you ({approvals.length + drafts.length})
+              Waiting on you ({approvals.length + drafts.length + reviewQueue.length})
             </button>
             <button className={cn('btn-ghost text-xs', tab === 'activity' && 'border-glow/60 bg-glow/10 text-white')} onClick={() => setTab('activity')}>
               Activity
@@ -93,7 +110,21 @@ export default function Team() {
           </div>
           {tab === 'approve' ? (
             <>
-              <Panel title="Needs your approval" hint="Draft → Needs approval → Approved → Done">
+              <StudioSetupNotice />
+              {flash && (
+                <p role="status" className={cn('rounded-xl border px-3 py-2 text-sm', flash.ok ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-100' : 'border-amber-400/30 bg-amber-400/10 text-amber-100')}>
+                  {flash.text}
+                </p>
+              )}
+              <Panel title="Content waiting for approval" hint="Approving is internal — it never schedules or posts." action={<Link to="/studio" className="text-xs text-muted hover:text-white">Content Studio →</Link>}>
+                {reviewQueue.length ? <div className="space-y-3">{reviewQueue.map((c) => <ContentApprovalCard key={c.id} item={c} onResult={setFlash} />)}</div> : <Calm>No content waiting for approval.</Calm>}
+              </Panel>
+              {sentBack.length > 0 && (
+                <Panel title="Sent back for changes">
+                  <div className="space-y-3">{sentBack.map((c) => <ContentApprovalCard key={c.id} item={c} onResult={setFlash} />)}</div>
+                </Panel>
+              )}
+              <Panel title="Other work needing approval" hint="Draft → Needs approval → Approved → Done">
                 {approvals.length ? <div className="space-y-3">{approvals.map((a) => <ActionCard key={a.id} action={a} />)}</div> : <Calm>Nothing waiting for approval.</Calm>}
               </Panel>
               <Panel title="Drafts ready for you">
@@ -101,9 +132,30 @@ export default function Team() {
               </Panel>
             </>
           ) : (
+            <>
+            <Panel title="Content approvals">
+              {contentEvents.length ? (
+                <ul className="space-y-2 text-xs">
+                  {contentEvents.map((e) => (
+                    <li key={e.id}>
+                      <Link to={`/studio/content/${e.contentId}`} className="text-white hover:underline">
+                        {db.content.find((c) => c.id === e.contentId)?.title ?? 'Removed draft'}
+                      </Link>
+                      <span className="block text-muted">
+                        {CONTENT_STATUS_LABEL[e.from]} → {CONTENT_STATUS_LABEL[e.to]} · {e.by} · {new Date(e.createdAt).toLocaleString()}
+                        {e.reason && ` · ${e.reason}`}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <Calm>No content approvals recorded yet.</Calm>
+              )}
+            </Panel>
             <Panel title="What the team did">
               {history.length ? <div className="space-y-3">{history.map((a) => <ActionCard key={a.id} action={a} compact />)}</div> : <Calm>No activity yet.</Calm>}
             </Panel>
+            </>
           )}
           <Panel title="How work is classified">
             <ul className="space-y-2 text-xs text-muted">

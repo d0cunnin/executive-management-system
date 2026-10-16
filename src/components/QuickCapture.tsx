@@ -80,7 +80,7 @@ export function QuickCapture() {
         break
       }
       case 'content': {
-        const c = store.create('content', { title, areaId, kind: 'post', status: 'idea' })
+        const c = store.create('content', { title, areaId, kind: 'post', status: 'draft', version: 1, engine: 'manual' })
         created = { type: 'content', id: c.id }
         break
       }

@@ -55,6 +55,15 @@ EMS never claims that something was researched, sent or published when it wasn't
 - **Approvals.** Public, external or financial work goes Draft → Needs approval → Approved → Done. Approving marks it ready, but nothing is sent: email, social, payments and calendar sync are **not connected yet**, and the app says so where it matters.
 - **Research.** Outside research (grants, conferences, market trends) needs connected AI with web access. Until then, EMS lists the questions it would research and says it has not researched them.
 
+## Content Studio
+
+Campaigns, content drafts, approvals, publishing records and results live in **Content Studio** (`/studio`). The content approval queue is on **My AI Team**, and each initiative's page has its own campaigns, brand setup, and people. Approving never schedules or posts anything.
+
+Setup and rules are in [docs/CONTENT_STUDIO.md](docs/CONTENT_STUDIO.md), including:
+- the database migration to run
+- how to give someone approval rights
+- what is and isn't connected
+
 ## How the code is organized
 
 ```
@@ -89,7 +98,7 @@ supabase/
 | 1. Foundation: auth, layout, navigation, TODAY, areas, projects, to-dos, calendar, Quick Capture, assistant, search, sample data, mobile | **Built** |
 | 2. Work management: project lifecycle, Move This Forward, ongoing work, waiting on, needs attention, finishing, history, reports | **Built** (campaigns and goals shown; full editing next) |
 | 3. Income: dashboard, offers, revenue tracking, monetization analysis | **Started:** dashboard, certainty, offers, “income you could unlock” |
-| 4. Marketing: campaign builder, content calendar, platform-specific content, analytics | **Started:** campaign strategy and platform-specific post planning skills, repurposing |
+| 4. Marketing: campaign builder, content calendar, platform-specific content, analytics | **Built:** Content Studio — campaigns, drafts with approval and revision history, content calendar, publishing records, sourced results (platform data entered by hand) |
 | 5. Opportunities: scoring, What Should I Work On Next, What Comes Next, discovery | **Started:** idea evaluation, what next, what comes next, internal asset scan |
 | 6. AI team: agents, skills, workflows, approvals, activity | **Built** on the built-in planner; full drafting when AI is connected |
 | 7. Knowledge: My Information, relationships, semantic search | **Started:** connected view, notes, relationships, keyword search |

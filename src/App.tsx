@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { createBrowserRouter, createRoutesFromElements, Navigate, Route, RouterProvider } from 'react-router-dom'
 import { EMSProvider } from './app/EMSContext'
 import { UIProvider } from './app/UIContext'
 import { AuthProvider, useAuth } from './auth/AuthContext'
@@ -21,6 +21,9 @@ import Team from './pages/Team'
 import Assistant from './pages/Assistant'
 import Information from './pages/Information'
 import Reviews from './pages/Reviews'
+import Studio from './pages/Studio'
+import CampaignPage from './pages/CampaignPage'
+import ContentEditor from './pages/ContentEditor'
 
 function Splash() {
   return (
@@ -48,39 +51,48 @@ function LoginRoute() {
   return user && !recovering ? <Navigate to="/" replace /> : <Login />
 }
 
+// A data router (createBrowserRouter) so pages can block navigation when
+// there are unsaved changes. Addresses are unchanged.
+const router = createBrowserRouter(
+  createRoutesFromElements(
+    <>
+      <Route path="/login" element={<LoginRoute />} />
+      <Route
+        element={
+          <Protected>
+            <Layout />
+          </Protected>
+        }
+      >
+        <Route index element={<Today />} />
+        <Route path="map" element={<CommandCenter />} />
+        <Route path="areas/:slug" element={<AreaPage />} />
+        <Route path="work" element={<Work />} />
+        <Route path="projects/:id" element={<ProjectPage />} />
+        <Route path="tasks" element={<Tasks />} />
+        <Route path="calendar" element={<CalendarPage />} />
+        <Route path="studio" element={<Studio />} />
+        <Route path="studio/campaigns/:id" element={<CampaignPage />} />
+        <Route path="studio/content/:id" element={<ContentEditor />} />
+        <Route path="ideas" element={<Ideas />} />
+        <Route path="income" element={<Income />} />
+        <Route path="wellness" element={<Wellness />} />
+        <Route path="team" element={<Team />} />
+        <Route path="assistant" element={<Assistant />} />
+        <Route path="information" element={<Information />} />
+        <Route path="reviews" element={<Reviews />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Route>
+    </>,
+  ),
+)
+
 export default function App() {
   return (
     <ErrorBoundary>
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<LoginRoute />} />
-          <Route
-            element={
-              <Protected>
-                <Layout />
-              </Protected>
-            }
-          >
-            <Route index element={<Today />} />
-            <Route path="map" element={<CommandCenter />} />
-            <Route path="areas/:slug" element={<AreaPage />} />
-            <Route path="work" element={<Work />} />
-            <Route path="projects/:id" element={<ProjectPage />} />
-            <Route path="tasks" element={<Tasks />} />
-            <Route path="calendar" element={<CalendarPage />} />
-            <Route path="ideas" element={<Ideas />} />
-            <Route path="income" element={<Income />} />
-            <Route path="wellness" element={<Wellness />} />
-            <Route path="team" element={<Team />} />
-            <Route path="assistant" element={<Assistant />} />
-            <Route path="information" element={<Information />} />
-            <Route path="reviews" element={<Reviews />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+      <AuthProvider>
+        <RouterProvider router={router} />
+      </AuthProvider>
     </ErrorBoundary>
   )
 }

@@ -4,6 +4,8 @@
 //
 // Nothing here sends, publishes, or spends anything outside EMS. Those
 // integrations are not connected yet, and the UI says so.
+import { METRICS, PLATFORM_SHAPE, objectiveLabel, overdueReason, summarizeMetrics } from '../domain/content'
+import { campaignBrief, campaignContext } from './campaignAI'
 import { CHANNEL_LABEL, MODE_LABEL } from '../domain/labels'
 import type { AIAction, Channel, DB } from '../domain/types'
 import type { Store } from '../data/store'
@@ -17,6 +19,7 @@ import type { AIProvider } from './provider'
 export interface SkillContext {
   db: DB
   projectId?: string
+  campaignId?: string
   areaId?: string
   taskId?: string
   /** Free text, e.g. the content to repurpose or the idea to evaluate. */
@@ -34,35 +37,24 @@ export interface SkillDef {
   apply?: (store: Store, action: AIAction) => string
 }
 
-const brandVoice = (db: DB) => db.notes.find((n) => n.kind === 'brand')?.body ?? 'Warm, direct, faith-rooted, practical.'
+const brandVoice = (db: DB) => db.notes.find((n) => n.kind === 'brand')?.body ?? 'Not configured — do not assume a voice; mark wording as needing confirmation.'
 
 function describe(c: SkillContext): string {
   const { db } = c
   const p = c.projectId ? db.projects.find((x) => x.id === c.projectId) : undefined
   const a = areaOf(db, c.areaId ?? p?.areaId)
-  const camp = p ? db.campaigns.find((x) => x.projectId === p.id) : undefined
+  const camp = c.campaignId ? db.campaigns.find((x) => x.id === c.campaignId) : p ? db.campaigns.find((x) => x.projectId === p.id) : undefined
   const t = c.taskId ? db.tasks.find((x) => x.id === c.taskId) : undefined
   return [
     a && `Area: ${a.name} — ${a.tagline}`,
     p && `Project: ${p.name}. Trying to accomplish: ${p.outcome}. Status ${p.status}, ${p.progress}% done.${p.blocker ? ` Blocker: ${p.blocker}` : ''}`,
     t && `Task: ${t.title}${t.waitingOn ? ` (waiting on ${t.waitingOn})` : ''}`,
-    camp && `Campaign: ${camp.name}. Objective ${camp.objective}. Audience: ${camp.audience ?? 'not set'}. Message: ${camp.message ?? 'not set'}. Offer: ${camp.offer ?? 'not set'}. CTA: ${camp.cta ?? 'not set'}. Channels: ${camp.channels.join(', ')}.`,
+    camp && campaignContext(db, camp),
     c.input && `Input: ${c.input}`,
     `Brand voice: ${brandVoice(db)}`,
   ].filter(Boolean).join('\n')
 }
 
-const PLATFORM_SHAPE: Partial<Record<Channel, string>> = {
-  instagram: 'Hook in the first line · 3–5 short lines · carousel or Reel concept · CTA “link in bio” · 3–5 focused hashtags',
-  facebook: 'Conversational opener · a short story or question · invite comments · direct link CTA',
-  linkedin: 'Professional insight up top · 2–3 short paragraphs · leader/counselor angle · link in first comment',
-  tiktok: '1-second visual hook · spoken script under 45s · on-screen text · CTA in caption',
-  youtube: 'Searchable title · 8–12 min outline · chapters · CTA mid-roll and end screen',
-  youtube_shorts: 'Hook in 2 seconds · one idea · vertical · CTA to the full video',
-  email: 'Subject line + preview text · one story · one CTA button',
-  substack: 'Headline · personal opening · 3 sections · subscribe/share CTA',
-  pinterest: 'Keyword-rich title · vertical graphic · link to resource',
-}
 
 function socialTemplate(c: SkillContext): string {
   const p = c.projectId ? c.db.projects.find((x) => x.id === c.projectId) : undefined
@@ -107,6 +99,8 @@ function briefText(db: DB): string {
     '',
     'WAITING ON',
     ...(wait.length ? wait.map((t) => `• ${t.waitingOn}: ${t.title} (${t.days} days)`) : ['• Nobody.']),
+    '',
+    `CAMPAIGNS — ${db.content.filter((c) => c.status === 'needs_review').length} waiting for approval · ${db.content.filter((c) => c.status === 'approved').length} approved, not scheduled · ${db.content.filter((c) => overdueReason(c)).length} overdue`,
     '',
     `INCOME — received this month ${money(inc.receivedThisMonth)} · expected ${money(inc.expected)} (not yet received)`,
     `WELLNESS — ${w.movement} active minutes over ${w.activeDays} days this week${w.sleep ? ` · sleep avg ${w.sleep}h` : ''}`,
@@ -246,14 +240,15 @@ export const SKILLS: Record<string, SkillDef> = {
     key: 'campaign_strategy', name: 'Campaign strategy', consequential: false,
     instruction: (c) => 'As a senior marketing strategist, review this campaign: audience, awareness level, offer, message, CTA, conversion path. Say what is working, what is not, what to test.\n' + describe(c),
     template: (c) => {
-      const camp = c.db.campaigns.find((x) => x.projectId === c.projectId)
+      const camp = c.db.campaigns.find((x) => (c.campaignId ? x.id === c.campaignId : x.projectId === c.projectId))
       if (!camp) return 'No campaign found for this project.'
       const m = camp.metrics ?? {}
+      const results = summarizeMetrics(camp, c.db.campaignMetrics).filter((x) => x.actual !== null)
       const gaps = (['audience', 'message', 'offer', 'cta'] as const).filter((k) => !camp[k])
       return [
-        `Campaign: ${camp.name} (objective: ${camp.objective})`,
-        m.reach !== undefined && `Numbers so far (entered in EMS): reach ${m.reach}, clicks ${m.clicks ?? '—'}, ${camp.objective.toLowerCase()} ${m.registrations ?? m.sales ?? '—'}`,
-        m.clicks && m.registrations ? `Click-to-${camp.objective.toLowerCase()} rate: ${Math.round((m.registrations / m.clicks) * 100)}%` : null,
+        `Campaign: ${camp.name} (objective: ${objectiveLabel(camp.objective)})`,
+        results.length ? `Results entered so far: ${results.map((x) => `${METRICS[x.metric]?.label ?? x.metric} ${x.actual}${x.target !== null ? ` of ${x.target}` : ''}`).join(', ')}` : 'No results entered yet, so performance can’t be judged.',
+        m.registrations !== undefined && 'Older numbers on this campaign have no recorded source.',
         gaps.length ? `Missing before this can perform: ${gaps.join(', ')}.` : 'Strategy basics are in place.',
         '',
         'Questions to decide:',
@@ -270,7 +265,7 @@ export const SKILLS: Record<string, SkillDef> = {
     key: 'draft_email', name: 'Draft an email', consequential: true,
     instruction: (c) => 'Draft a marketing email: subject, preview text, body with one story, one CTA.\n' + describe(c),
     template: (c) => {
-      const camp = c.db.campaigns.find((x) => x.projectId === c.projectId)
+      const camp = c.db.campaigns.find((x) => (c.campaignId ? x.id === c.campaignId : x.projectId === c.projectId))
       return [`Subject: [Benefit-led subject — ${camp?.offer ?? 'the offer'}]`, 'Preview: [one line that finishes the subject’s thought]', '', 'Opening: a short story your reader recognizes.', `Turn: ${camp?.message ?? '[core message]'}`, `Offer: ${camp?.offer ?? '[offer]'} — what they get and by when.`, `Button: ${camp?.cta ?? '[CTA]'}`, 'P.S. Deadline reminder.'].join('\n')
     },
   },
@@ -325,6 +320,11 @@ export const SKILLS: Record<string, SkillDef> = {
   },
   ministry_plan: { key: 'ministry_plan', name: 'Ministry plan', consequential: false, instruction: () => 'Draft a ministry plan.', template: () => ['Ministry plan', '• Purpose', '• Team and roles', '• Calendar', '• Communications', '• Volunteers needed'].join('\n') },
   draft_announcement: { key: 'draft_announcement', name: 'Draft an announcement', consequential: true, instruction: (c) => 'Draft a church announcement.\n' + describe(c), template: () => 'Announcement: [what] · [when] · [where] · [who to contact]' },
+  campaign_brief: {
+    key: 'campaign_brief', name: 'Campaign brief', consequential: false,
+    instruction: () => 'Summarize what needs attention across campaigns: approvals, overdue content, deadlines, initiative priorities, and changes in entered results. Use only the records given.',
+    template: (c) => campaignBrief(c.db),
+  },
   study_plan: {
     key: 'study_plan', name: 'Two-week study plan', consequential: false,
     instruction: (c) => 'Build a realistic two-week nursing school study plan around these classes, clinicals, exams and assignments. Protect rest before clinicals and exams.\n' + describe(c),
@@ -365,10 +365,10 @@ export const SKILLS: Record<string, SkillDef> = {
 export async function runSkill(
   store: Store,
   provider: AIProvider,
-  opts: { skill: string; agentKey: string; title: string; projectId?: string; areaId?: string; taskId?: string; input?: string; consequential?: boolean },
+  opts: { skill: string; agentKey: string; title: string; projectId?: string; areaId?: string; taskId?: string; campaignId?: string; input?: string; consequential?: boolean },
 ): Promise<AIAction> {
   const def = SKILLS[opts.skill] ?? SKILLS.draft_outline
-  const ctx: SkillContext = { db: store.snapshot(), projectId: opts.projectId, areaId: opts.areaId, taskId: opts.taskId, input: opts.input }
+  const ctx: SkillContext = { db: store.snapshot(), projectId: opts.projectId, areaId: opts.areaId, taskId: opts.taskId, campaignId: opts.campaignId, input: opts.input }
   let output: string
   let engine: AIAction['engine'] = 'builtin'
   let summary = 'Prepared by the built-in planner from your EMS data. No AI model is connected.'
@@ -401,6 +401,7 @@ export async function runSkill(
     projectId: opts.projectId,
     areaId: opts.areaId,
     taskId: opts.taskId,
+    campaignId: opts.campaignId,
   })
 }
 

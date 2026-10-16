@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import type { Role } from '../domain/content'
 import { supabase } from '../lib/supabase'
 
 export interface AuthUser {
@@ -18,6 +19,10 @@ interface AuthState {
   loading: boolean
   /** True after opening a password-reset link; the app asks for a new password. */
   recovering: boolean
+  /** Content approval role. null while unknown or when it couldn't be read. */
+  role: Role | null
+  /** Why the role couldn't be read (for example, the migration hasn't run). */
+  roleError: string | null
   signIn(email: string, password: string): Promise<AuthResult>
   signUp(email: string, password: string): Promise<AuthResult>
   resendConfirmation(email: string): Promise<AuthResult>
@@ -59,6 +64,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(mode === 'demo' && readDemo() ? DEMO_USER : null)
   const [loading, setLoading] = useState(mode === 'supabase')
   // A password-reset link lands here with type=recovery in the URL hash.
+  const [role, setRole] = useState<Role | null>(mode === 'demo' ? 'owner' : null)
+  const [roleError, setRoleError] = useState<string | null>(null)
   const [recovering, setRecovering] = useState(() => typeof window !== 'undefined' && window.location.hash.includes('type=recovery'))
 
   useEffect(() => {
@@ -74,11 +81,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => data.subscription.unsubscribe()
   }, [])
 
+  // In Supabase mode the role comes from ems_user_roles; no row means editor.
+  // The database enforces the same rule, so this only shapes what is shown.
+  const userId = user?.id
+  useEffect(() => {
+    if (!supabase || !userId) return
+    let live = true
+    supabase
+      .from('ems_user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (!live) return
+        if (error) {
+          setRole(null)
+          setRoleError(/does not exist|could not find|permission denied/i.test(error.message) ? 'Approval roles aren’t set up yet. Run the Content Studio migration in Supabase.' : error.message)
+        } else {
+          setRole(((data?.role as Role | undefined) ?? 'editor'))
+          setRoleError(null)
+        }
+      })
+    return () => {
+      live = false
+    }
+  }, [userId])
+
   const value: AuthState = {
     mode,
     user,
     loading,
     recovering,
+    role: mode === 'demo' ? 'owner' : role,
+    roleError,
     async signIn(email, password) {
       if (!supabase) return { ok: false, message: 'Sign-in is not configured.' }
       const { error } = await supabase.auth.signInWithPassword({ email, password })
