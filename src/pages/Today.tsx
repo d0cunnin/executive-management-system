@@ -52,6 +52,7 @@ export default function Today() {
   const next = useMemo(() => whatNext(db), [db])
   const load = loadCheck(db)
   const focus = focusAdvice(db)
+  const brief = db.notifications.filter((n) => n.kind === 'night_shift' && !n.read).sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]
   const approvals = [...db.actions.filter((a) => a.state === 'needs_approval'), ...db.content.filter((c) => c.status === 'needs_review')]
 
   const doForMe = async (t: Task) => {
@@ -77,6 +78,24 @@ export default function Today() {
           <p className="mt-3 max-w-3xl rounded-xl border border-emerald-400/20 bg-emerald-400/[0.06] px-3.5 py-2.5 text-sm text-emerald-100">{load ?? focus}</p>
         )}
       </header>
+
+      {brief && (
+        <section className="glass rise p-4 sm:p-5" aria-label="Overnight brief">
+          <p className="label">Overnight brief</p>
+          <p className="mt-1 text-[15px] font-medium text-white">{brief.title}</p>
+          {brief.body && (
+            <ul className="mt-2 space-y-1 text-sm text-muted">
+              {brief.body.split('\n').map((line, i) => (
+                <li key={i}>{line}</li>
+              ))}
+            </ul>
+          )}
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Link to="/team" className="btn-primary py-1.5 text-xs">Review the drafts</Link>
+            <button className="btn-ghost py-1.5 text-xs" onClick={() => store.update('notifications', brief.id, { read: true })}>Got it</button>
+          </div>
+        </section>
+      )}
 
       <div className="grid gap-5 xl:grid-cols-3">
         <div className="space-y-5 xl:col-span-2">

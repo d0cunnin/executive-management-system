@@ -7,7 +7,7 @@ function fakeClient(results: Record<string, { data?: unknown[]; error?: { code?:
   return {
     from(table: string) {
       return {
-        select: async () => results[table] ?? { data: [], error: null },
+        select: () => ({ eq: async () => results[table] ?? { data: [], error: null } }),
         upsert: async (rows: unknown) => {
           writes.push({ table, rows })
           return { error: null }

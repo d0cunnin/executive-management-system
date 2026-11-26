@@ -141,6 +141,13 @@ export class Store {
     return n
   }
 
+  /** Resolves once every queued change is saved, or rejects if saving failed. */
+  async whenSaved(): Promise<void> {
+    while (this.flushing || (this.pending.size > 0 && !this.offline)) await new Promise((r) => setTimeout(r, 25))
+    if (this.offline) throw new Error(`${this.unsavedCount} changes could not reach the database.`)
+    if (this.error) throw new Error(this.error)
+  }
+
   /** Try saving queued changes now (for example from a "Try now" button). */
   retryNow = () => {
     if (this.retryTimer) clearTimeout(this.retryTimer)

@@ -454,7 +454,7 @@ export interface AIAction extends BaseRecord {
 }
 
 export interface Notification extends BaseRecord {
-  kind: 'needs_attention' | 'overdue' | 'waiting' | 'opportunity' | 'income' | 'completed' | 'next' | 'upcoming' | 'wellness' | 'approval'
+  kind: 'needs_attention' | 'overdue' | 'waiting' | 'opportunity' | 'income' | 'completed' | 'next' | 'upcoming' | 'wellness' | 'approval' | 'night_shift'
   title: string
   body?: string
   href?: string

@@ -1,0 +1,29 @@
+# The EMS night shift: every night the AI team drafts the to-dos marked for AI
+# and leaves a brief on the Today page. Nothing is sent, posted or published.
+# Also keeps the Supabase project active so the free plan doesn't pause it.
+name: Night shift
+
+on:
+  schedule:
+    # 04:00 UTC = 11 PM Central (10 PM in winter). Change the hour to move it.
+    - cron: '0 4 * * *'
+  workflow_dispatch: {}
+
+concurrency: night-shift
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx tsx scripts/night-shift.ts
+        env:
+          SUPABASE_URL: https://hshyhyiwbemfvaxffnly.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NIGHT_SHIFT_MAX: '8'

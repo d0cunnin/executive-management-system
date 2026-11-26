@@ -85,7 +85,8 @@ export class SupabasePersistence implements Persistence {
 
   async load(): Promise<DB | null> {
     const names = Object.keys(TABLES) as CollectionName[]
-    const results = await Promise.all(names.map((n) => this.client.from(TABLES[n]).select('data')))
+    // Filter by owner explicitly too: the overnight job reads with a server key that bypasses row-level security.
+    const results = await Promise.all(names.map((n) => this.client.from(TABLES[n]).select('data').eq('user_id', this.userId)))
     const db = {} as Record<CollectionName, unknown[]>
     let total = 0
     this.missing = []
