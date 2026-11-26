@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { areaOf } from '../ai/intelligence'
 import { runTask } from '../ai/routing'
+import { hasOpenDraft } from '../ai/skills'
 import { useDB, useEMS } from '../app/EMSContext'
 import { AreaTag, Calm, PageHeader, Panel } from '../components/ui'
 import { MODE_LABEL } from '../domain/labels'
@@ -78,7 +79,7 @@ export default function Tasks() {
                         <div className="mt-0.5 flex flex-wrap items-center gap-x-3 text-xs text-muted">
                           <AreaTag area={areaOf(db, t.areaId)} />
                           {t.dueDate && <span>{friendlyDate(t.dueDate)}</span>}
-                          {t.status === 'doing' && c.mode !== 'me' && <Link to="/team" className="text-gold">prepared — review</Link>}
+                          {c.mode !== 'me' && hasOpenDraft(db, t.id) && <Link to="/team" className="text-gold">prepared — review</Link>}
                         </div>
                         {c.mode !== 'me' && <AINotes task={t} />}
                         <div className="mt-1.5 flex gap-1">
@@ -89,7 +90,7 @@ export default function Tasks() {
                           ))}
                         </div>
                       </div>
-                      {c.mode !== 'me' && t.status === 'todo' && (
+                      {c.mode !== 'me' && !hasOpenDraft(db, t.id) && (
                         <button
                           className="btn-primary px-2.5 py-1 text-xs"
                           disabled={running === t.id}

@@ -124,11 +124,11 @@ export default function Team() {
                   <div className="space-y-3">{sentBack.map((c) => <ContentApprovalCard key={c.id} item={c} onResult={setFlash} />)}</div>
                 </Panel>
               )}
-              <Panel title="Other work needing approval" hint="Draft → Needs approval → Approved → Done">
-                {approvals.length ? <div className="space-y-3">{approvals.map((a) => <ActionCard key={a.id} action={a} />)}</div> : <Calm>Nothing waiting for approval.</Calm>}
+              <Panel title="Drafts waiting for your approval" hint="Posts, emails and messages land here. Approving never sends or posts anything.">
+                {approvals.length ? <div className="space-y-3">{approvals.map((a) => <ActionCard key={a.id} action={a} />)}</div> : <Calm>Nothing waiting for your approval.</Calm>}
               </Panel>
-              <Panel title="Drafts ready for you">
-                {drafts.length ? <div className="space-y-3">{drafts.map((a) => <ActionCard key={a.id} action={a} />)}</div> : <Calm>No drafts waiting.</Calm>}
+              <Panel title="Other drafts ready for you" hint="Outlines, plans and research — no approval needed.">
+                {drafts.length ? <div className="space-y-3">{drafts.map((a) => <ActionCard key={a.id} action={a} />)}</div> : <Calm>No other drafts right now.</Calm>}
               </Panel>
             </>
           ) : (

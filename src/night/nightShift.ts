@@ -21,11 +21,11 @@ export interface NightShiftResult {
 
 const OPEN_ACTION = new Set(['draft', 'needs_approval'])
 
-/** To-dos the AI can take tonight: marked for AI, not started, no draft already waiting. */
+/** To-dos the AI can take tonight: marked for AI, open, and no draft already waiting on her. */
 export function nightQueue(store: Store): Task[] {
   const db = store.snapshot()
   const busy = new Set(db.actions.filter((a) => a.taskId && OPEN_ACTION.has(a.state)).map((a) => a.taskId))
-  return aiCanDo(db).filter((t) => t.status === 'todo' && !busy.has(t.id))
+  return aiCanDo(db).filter((t) => !busy.has(t.id))
 }
 
 export async function runNightShift(store: Store, provider: AIProvider, opts: { max: number }): Promise<NightShiftResult> {

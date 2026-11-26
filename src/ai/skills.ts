@@ -406,6 +406,18 @@ export async function runSkill(
   })
 }
 
+/** True while a draft for this to-do is waiting on her (not yet used, approved or declined). */
+export function hasOpenDraft(db: DB, taskId: string): boolean {
+  return db.actions.some((a) => a.taskId === taskId && (a.state === 'draft' || a.state === 'needs_approval'))
+}
+
+/** Decline a draft. Its to-do goes back on the list so it can be done again. */
+export function declineAction(store: Store, action: AIAction): void {
+  store.update('actions', action.id, { state: 'declined' })
+  const task = action.taskId ? store.get('tasks', action.taskId) : undefined
+  if (task && task.status === 'doing' && !hasOpenDraft(store.snapshot(), task.id)) store.update('tasks', task.id, { status: 'todo' })
+}
+
 /**
  * Carry out an approved action inside EMS. External sending is not connected,
  * so consequential actions are marked ready, with that stated plainly.

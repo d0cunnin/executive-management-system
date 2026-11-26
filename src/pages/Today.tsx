@@ -6,6 +6,7 @@ import {
   waitingOn, wellnessSummary, whatNext,
 } from '../ai/intelligence'
 import { runTask } from '../ai/routing'
+import { hasOpenDraft } from '../ai/skills'
 import { useDB, useEMS } from '../app/EMSContext'
 import { SampleDataBanner } from '../components/SampleDataBanner'
 import { AreaTag, Calm, ModeBadge, Panel } from '../components/ui'
@@ -139,7 +140,7 @@ export default function Today() {
                         <AreaTag area={areaOf(db, t.areaId)} />
                       </div>
                     </div>
-                    {t.status === 'doing' ? (
+                    {hasOpenDraft(db, t.id) ? (
                       <Link to="/team" className="btn-ghost py-1.5 text-xs">Review</Link>
                     ) : (
                       <button className="btn-primary py-1.5 text-xs" onClick={() => doForMe(t)} disabled={running === t.id}>

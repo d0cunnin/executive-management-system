@@ -1,6 +1,6 @@
 import { Check, Copy, Pencil, X } from 'lucide-react'
 import { useState } from 'react'
-import { executeAction } from '../ai/skills'
+import { declineAction, executeAction } from '../ai/skills'
 import { useDB, useEMS } from '../app/EMSContext'
 import { ACTION_STATE_LABEL } from '../domain/labels'
 import type { AIAction } from '../domain/types'
@@ -73,7 +73,7 @@ export function ActionCard({ action, compact }: { action: AIAction; compact?: bo
           </button>
         )}
         {pending && (
-          <button className="btn-ghost py-1.5 text-xs" onClick={() => store.update('actions', action.id, { state: 'declined' })}>
+          <button className="btn-ghost py-1.5 text-xs" onClick={() => declineAction(store, store.get('actions', action.id)!)}>
             <X size={13} /> Decline
           </button>
         )}

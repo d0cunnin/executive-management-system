@@ -45,3 +45,19 @@ describe('Do it', () => {
     expect(action.engine).toBe('ai')
   })
 })
+
+describe('declining a draft', () => {
+  it('puts the to-do back so it can be done again', async () => {
+    const { declineAction, hasOpenDraft } = await import('../skills')
+    const mem: Persistence = { kind: 'local', load: async () => null, saveCollection: async () => {}, saveAll: async () => {} }
+    const store = new Store(mem)
+    await store.init()
+    const t = store.create('tasks', { title: 'Instagram post', status: 'todo', mode: 'ai_does', importance: 3 })
+    const action = await runTask(store, reply('social_posts'), t)
+    expect(action.state).toBe('needs_approval')
+    expect(hasOpenDraft(store.snapshot(), t.id)).toBe(true)
+    declineAction(store, action)
+    expect(store.get('tasks', t.id)?.status).toBe('todo')
+    expect(hasOpenDraft(store.snapshot(), t.id)).toBe(false)
+  })
+})
