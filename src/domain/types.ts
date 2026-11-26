@@ -116,6 +116,8 @@ export interface Task extends BaseRecord {
   waitingOn?: string
   waitingSince?: string
   doneAt?: string
+  /** What she wants from the AI for this to-do, in her own words. */
+  notes?: string
   /** Set when this task came from a capture or a "move forward" suggestion. */
   source?: 'capture' | 'assistant' | 'manual'
 }

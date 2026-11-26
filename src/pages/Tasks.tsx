@@ -1,8 +1,8 @@
 import { Loader2, Plus, Sparkles } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { areaOf, skillForTask } from '../ai/intelligence'
-import { runSkill } from '../ai/skills'
+import { areaOf } from '../ai/intelligence'
+import { runTask } from '../ai/routing'
 import { useDB, useEMS } from '../app/EMSContext'
 import { AreaTag, Calm, PageHeader, Panel } from '../components/ui'
 import { MODE_LABEL } from '../domain/labels'
@@ -80,6 +80,7 @@ export default function Tasks() {
                           {t.dueDate && <span>{friendlyDate(t.dueDate)}</span>}
                           {t.status === 'doing' && c.mode !== 'me' && <Link to="/team" className="text-gold">prepared — review</Link>}
                         </div>
+                        {c.mode !== 'me' && <AINotes task={t} />}
                         <div className="mt-1.5 flex gap-1">
                           {COLS.filter((x) => x.mode !== c.mode).map((x) => (
                             <button key={x.mode} className="chip cursor-pointer hover:text-white" onClick={() => store.update('tasks', t.id, { mode: x.mode })}>
@@ -94,7 +95,7 @@ export default function Tasks() {
                           disabled={running === t.id}
                           onClick={async () => {
                             setRunning(t.id)
-                            await runSkill(store, ai, { ...skillForTask(t), title: t.title, projectId: t.projectId, areaId: t.areaId, taskId: t.id })
+                            await runTask(store, ai, t)
                             setRunning(null)
                           }}
                         >
@@ -129,6 +130,39 @@ export default function Tasks() {
           <Calm>You are not waiting on anyone.</Calm>
         )}
       </Panel>
+    </div>
+  )
+}
+
+/** What she wants from the AI for this to-do. Read by whichever assistant takes it. */
+function AINotes({ task }: { task: Task }) {
+  const { store } = useEMS()
+  const [open, setOpen] = useState(false)
+  const [text, setText] = useState(task.notes ?? '')
+  if (!open)
+    return (
+      <button className="mt-1 block max-w-full truncate text-left text-xs text-muted hover:text-white" onClick={() => setOpen(true)}>
+        {task.notes ? `Notes for the AI: ${task.notes}` : '+ Notes for the AI'}
+      </button>
+    )
+  const save = () => {
+    store.update('tasks', task.id, { notes: text.trim() || undefined })
+    setOpen(false)
+  }
+  return (
+    <div className="mt-1.5">
+      <textarea
+        autoFocus
+        className="input min-h-20 text-sm"
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="What should the AI make? Who is it for, what to include, tone, length…"
+        aria-label={`Notes for the AI: ${task.title}`}
+      />
+      <div className="mt-1 flex gap-2">
+        <button className="btn-primary py-1 text-xs" onClick={save}>Save notes</button>
+        <button className="btn-ghost py-1 text-xs" onClick={() => { setText(task.notes ?? ''); setOpen(false) }}>Cancel</button>
+      </div>
     </div>
   )
 }

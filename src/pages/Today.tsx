@@ -2,10 +2,10 @@ import { ArrowUpRight, Check, Loader2, Sparkles } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  aiCanDo, areaOf, comingUp, focusAdvice, incomeSummary, iNeedToHandle, loadCheck, movedForward, needsAttention, skillForTask,
+  aiCanDo, areaOf, comingUp, focusAdvice, incomeSummary, iNeedToHandle, loadCheck, movedForward, needsAttention,
   waitingOn, wellnessSummary, whatNext,
 } from '../ai/intelligence'
-import { runSkill } from '../ai/skills'
+import { runTask } from '../ai/routing'
 import { useDB, useEMS } from '../app/EMSContext'
 import { SampleDataBanner } from '../components/SampleDataBanner'
 import { AreaTag, Calm, ModeBadge, Panel } from '../components/ui'
@@ -57,7 +57,7 @@ export default function Today() {
 
   const doForMe = async (t: Task) => {
     setRunning(t.id)
-    await runSkill(store, ai, { ...skillForTask(t), title: t.title, projectId: t.projectId, areaId: t.areaId, taskId: t.id })
+    await runTask(store, ai, t)
     setRunning(null)
   }
 

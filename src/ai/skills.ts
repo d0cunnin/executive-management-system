@@ -49,6 +49,7 @@ function describe(c: SkillContext): string {
     a && `Area: ${a.name} — ${a.tagline}`,
     p && `Project: ${p.name}. Trying to accomplish: ${p.outcome}. Status ${p.status}, ${p.progress}% done.${p.blocker ? ` Blocker: ${p.blocker}` : ''}`,
     t && `Task: ${t.title}${t.waitingOn ? ` (waiting on ${t.waitingOn})` : ''}`,
+    t?.notes && `Her notes for this to-do (follow these): ${t.notes}`,
     camp && campaignContext(db, camp),
     c.input && `Input: ${c.input}`,
     `Brand voice: ${brandVoice(db)}`,

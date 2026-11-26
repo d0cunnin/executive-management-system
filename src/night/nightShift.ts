@@ -5,9 +5,9 @@
 // - Everything is a draft. Nothing is sent, posted, published, paid or deleted.
 // - Anything public or external waits in her approval list.
 // - The brief reports only what actually happened.
-import { aiCanDo, skillForTask } from '../ai/intelligence'
+import { aiCanDo } from '../ai/intelligence'
 import type { AIProvider } from '../ai/provider'
-import { runSkill } from '../ai/skills'
+import { runTask } from '../ai/routing'
 import type { Store } from '../data/store'
 import type { Task } from '../domain/types'
 
@@ -37,7 +37,7 @@ export async function runNightShift(store: Store, provider: AIProvider, opts: { 
     result.leftForLater = queue.length
   } else {
     for (const [i, t] of queue.slice(0, opts.max).entries()) {
-      const action = await runSkill(store, provider, { ...skillForTask(t), title: t.title, projectId: t.projectId, areaId: t.areaId, taskId: t.id })
+      const action = await runTask(store, provider, t)
       if (action.engine !== 'ai') {
         // The AI couldn't be reached. A template isn't worth waking up to:
         // undo this one and leave the rest for the next night.
