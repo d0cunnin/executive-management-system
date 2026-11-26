@@ -90,6 +90,14 @@ export default function CommandCenter() {
         <div className="glass relative overflow-hidden p-2">
           <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label="Map of D’Andrea’s areas">
             <defs>
+              <linearGradient id="brainColors" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stopColor="#f0abfc" />
+                <stop offset="0.25" stopColor="#818cf8" />
+                <stop offset="0.5" stopColor="#38bdf8" />
+                <stop offset="0.75" stopColor="#34d399" />
+                <stop offset="1" stopColor="#facc15" />
+                <animateTransform attributeName="gradientTransform" type="rotate" values="0 0.5 0.5;360 0.5 0.5" dur="12s" repeatCount="indefinite" />
+              </linearGradient>
               <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
                 <feGaussianBlur stdDeviation="6" result="b" />
                 <feMerge>
@@ -104,7 +112,9 @@ export default function CommandCenter() {
             ))}
             {/* spokes */}
             {nodes.map((n) => (
-              <line key={`s_${n.a.id}`} x1={CX} y1={CY} x2={n.x} y2={n.y} stroke={n.a.color} strokeOpacity={isLinked(n.a.id) ? 0.22 : 0.05} strokeWidth={1} />
+              <line key={`s_${n.a.id}`} x1={CX} y1={CY} x2={n.x} y2={n.y} stroke={n.a.color} strokeOpacity={isLinked(n.a.id) ? 0.45 : 0.08} strokeWidth={1.2} strokeDasharray="4 6">
+                <animate attributeName="stroke-dashoffset" from="0" to="20" dur="1.6s" repeatCount="indefinite" />
+              </line>
             ))}
             {/* area-to-area relationships */}
             {edges.map((e) => {
@@ -127,20 +137,25 @@ export default function CommandCenter() {
                 </path>
               )
             })}
-            {/* core: a glowing brain outline */}
-            <g transform={`translate(${CX - 72} ${CY - 84}) scale(6)`} fill="none" strokeLinecap="round" strokeLinejoin="round">
-              <g stroke="#a78bfa" strokeWidth={6} filter="url(#glow)" opacity="0.55">
+            {/* core: a colorful glowing brain outline; the area lines connect to its ring */}
+            <circle cx={CX} cy={CY} r={78} fill="#0b0920" stroke="url(#brainColors)" strokeOpacity="0.6" strokeWidth={1.5} />
+            <circle cx={CX} cy={CY} r={78} fill="none" stroke="#c4b5fd" strokeOpacity="0.5">
+              <animate attributeName="r" values="78;100;78" dur="5s" repeatCount="indefinite" />
+              <animate attributeName="stroke-opacity" values="0.5;0;0.5" dur="5s" repeatCount="indefinite" />
+            </circle>
+            <g transform={`translate(${CX - 64.8} ${CY - 64.8}) scale(5.4)`} fill="none" strokeLinecap="round" strokeLinejoin="round">
+              <g stroke="url(#brainColors)" strokeWidth={6} filter="url(#glow)" opacity="0.6">
                 {BRAIN.map((d) => <path key={d} d={d} vectorEffect="non-scaling-stroke" />)}
-                <animate attributeName="opacity" values="0.35;0.8;0.35" dur="5s" repeatCount="indefinite" />
+                <animate attributeName="opacity" values="0.35;0.85;0.35" dur="5s" repeatCount="indefinite" />
               </g>
-              <g stroke="#ede9fe" strokeWidth={2.5}>
+              <g stroke="url(#brainColors)" strokeWidth={2.2}>
                 {BRAIN.map((d) => <path key={d} d={d} vectorEffect="non-scaling-stroke" />)}
               </g>
             </g>
-            <text x={CX} y={CY + 78} textAnchor="middle" className="fill-white font-display" fontSize="18" fontWeight="700">
+            <text x={CX} y={CY + 104} textAnchor="middle" className="fill-white font-display" fontSize="18" fontWeight="700">
               D’ANDREA BOLDEN
             </text>
-            <text x={CX} y={CY + 96} textAnchor="middle" fill="#e9e5ff" fontSize="11" letterSpacing="4">
+            <text x={CX} y={CY + 121} textAnchor="middle" fill="#e9e5ff" fontSize="11" letterSpacing="4">
               EMS
             </text>
             {/* area nodes */}
