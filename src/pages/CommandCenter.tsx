@@ -13,6 +13,18 @@ const H = 720
 const CX = W / 2
 const CY = H / 2
 
+/** Brain outline (24×24 grid), drawn at the center of the map. */
+const BRAIN = [
+  'M12 18V5',
+  'M15 13a4.17 4.17 0 0 1-3-4 4.17 4.17 0 0 1-3 4',
+  'M17.598 6.5A3 3 0 1 0 12 5a3 3 0 1 0-5.598 1.5',
+  'M17.997 5.125a4 4 0 0 1 2.526 5.77',
+  'M18 18a4 4 0 0 0 2-7.464',
+  'M19.967 17.483A4 4 0 1 1 12 18a4 4 0 1 1-7.967-.517',
+  'M6 18a4 4 0 0 1-2-7.464',
+  'M6.003 5.125a4 4 0 0 0-2.526 5.77',
+]
+
 function areaStats(db: DB, a: Area) {
   const projects = db.projects.filter((p) => p.areaId === a.id && isOpen(p))
   const attention = needsAttention(db).filter((n) => projects.some((p) => p.id === n.key))
@@ -78,11 +90,6 @@ export default function CommandCenter() {
         <div className="glass relative overflow-hidden p-2">
           <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label="Map of D’Andrea’s areas">
             <defs>
-              <radialGradient id="core" cx="50%" cy="45%">
-                <stop offset="0" stopColor="#c4b5fd" />
-                <stop offset="0.6" stopColor="#7c5cff" />
-                <stop offset="1" stopColor="#3b2a9e" />
-              </radialGradient>
               <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
                 <feGaussianBlur stdDeviation="6" result="b" />
                 <feMerge>
@@ -120,18 +127,20 @@ export default function CommandCenter() {
                 </path>
               )
             })}
-            {/* core */}
-            <g filter="url(#glow)">
-              <circle cx={CX} cy={CY} r={58} fill="url(#core)" />
+            {/* core: a glowing brain outline */}
+            <g transform={`translate(${CX - 72} ${CY - 84}) scale(6)`} fill="none" strokeLinecap="round" strokeLinejoin="round">
+              <g stroke="#a78bfa" strokeWidth={6} filter="url(#glow)" opacity="0.55">
+                {BRAIN.map((d) => <path key={d} d={d} vectorEffect="non-scaling-stroke" />)}
+                <animate attributeName="opacity" values="0.35;0.8;0.35" dur="5s" repeatCount="indefinite" />
+              </g>
+              <g stroke="#ede9fe" strokeWidth={2.5}>
+                {BRAIN.map((d) => <path key={d} d={d} vectorEffect="non-scaling-stroke" />)}
+              </g>
             </g>
-            <circle cx={CX} cy={CY} r={58} fill="none" stroke="#c4b5fd" strokeOpacity="0.5">
-              <animate attributeName="r" values="58;78;58" dur="5s" repeatCount="indefinite" />
-              <animate attributeName="stroke-opacity" values="0.5;0;0.5" dur="5s" repeatCount="indefinite" />
-            </circle>
-            <text x={CX} y={CY - 6} textAnchor="middle" className="fill-white font-display" fontSize="20" fontWeight="700">
+            <text x={CX} y={CY + 78} textAnchor="middle" className="fill-white font-display" fontSize="18" fontWeight="700">
               D’ANDREA BOLDEN
             </text>
-            <text x={CX} y={CY + 16} textAnchor="middle" fill="#e9e5ff" fontSize="12" letterSpacing="4">
+            <text x={CX} y={CY + 96} textAnchor="middle" fill="#e9e5ff" fontSize="11" letterSpacing="4">
               EMS
             </text>
             {/* area nodes */}
