@@ -3,8 +3,11 @@
 // requested assistant. Deploy with:
 //   supabase secrets set ANTHROPIC_API_KEY=...
 //   supabase functions deploy ems-ai
-// Supabase verifies the caller's JWT by default, so only signed-in users reach it.
+// Keep "Verify JWT" on for this function. On top of that, it only answers a
+// signed-in user or the night shift (server key). The app's public key alone
+// is refused, so nobody can spend the AI credit with it.
 import Anthropic from 'npm:@anthropic-ai/sdk'
+import { createClient } from 'npm:@supabase/supabase-js@2'
 
 const MODEL = Deno.env.get('EMS_AI_MODEL') ?? 'claude-opus-5-5'
 
@@ -39,9 +42,20 @@ Do not create busywork. If the best move is to do nothing, say so.
 Use only the facts in the EMS context you are given. Never invent brand facts, testimonials, quotations, statistics, program details, credentials, partnerships or performance results. Where something needed is missing, write [Needs confirmation: what is missing] instead of guessing.
 Everything you write is a draft. You cannot approve, schedule, publish or send anything, and must never say that you did.`
 
+/** A signed-in user, or the night shift's server key. Never the public key alone. */
+async function allowed(req: Request): Promise<boolean> {
+  const token = req.headers.get('Authorization')?.replace(/^Bearer\s+/i, '') ?? ''
+  if (!token) return false
+  if (token === Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')) return true
+  const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!)
+  const { data, error } = await supabase.auth.getUser(token)
+  return !error && !!data.user
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
   const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } })
+  if (!(await allowed(req))) return json({ error: 'Please sign in to use the AI.' }, 401)
 
   try {
     const { agentKey, instruction, context } = await req.json()
